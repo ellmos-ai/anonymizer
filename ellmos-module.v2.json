@@ -3,7 +3,7 @@
   "id": "anonymizer",
   "display_name": "Anonymizer",
   "version": "0.2.5",
-  "description": "Private fail-closed pseudonymization service for sensitive local documents.",
+  "description": "Fail-closed pseudonymization service for sensitive local documents.",
   "package": "anonymizer-modul",
   "entrypoints": {
     "library": "anonymizer_modul",
@@ -11,8 +11,8 @@
   },
   "category": "domains",
   "kind": "service",
-  "status": "development",
-  "visibility": "private",
+  "status": "released",
+  "visibility": "public",
   "provides": [
     "privacy.anonymize",
     "privacy.pseudonymize"

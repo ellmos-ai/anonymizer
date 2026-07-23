@@ -107,6 +107,55 @@ class TestDetectionBoundary(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 DocumentAnonymizer().scan_text_for_sensitive_data("synthetic text")
 
+    def test_looks_like_person_name_rejects_generic_report_and_admin_nouns(self):
+        """Direct filter-level regression for the observed foerderplaner
+        Referenzlauf-Overblocking (2026-07-23): generic institutional/report
+        nouns fused with or standing in for a proper name must not pass,
+        while genuine synthetic names still do."""
+        for candidate in (
+            "Landkreis Lörrach", "Landkreis Loerrach", "Jugendamt Musterstadt",
+            "Förderung", "Foerderung", "Zusage", "Ablauf",
+        ):
+            self.assertFalse(
+                core._looks_like_person_name(candidate),
+                f"{candidate!r} should not pass as a plausible person name",
+            )
+        for candidate in ("Kim", "Kim Beispiel", "Anna Muster", "Dr. Anna Muster"):
+            self.assertTrue(
+                core._looks_like_person_name(candidate),
+                f"{candidate!r} should still pass as a plausible person name",
+            )
+
+    def test_ner_overblocking_generic_nouns_filtered_end_to_end(self):
+        """End-to-end via detect_person_names_ner with a fake model that
+        reproduces the real over-blocking pattern (generic nouns tagged PER
+        alongside a genuine name in the same chunk)."""
+        class FakeModel:
+            max_length = 10_000
+
+            def __call__(self, text):
+                spans = ["Landkreis Lörrach", "Förderung", "Zusage", "Ablauf", "Kim"]
+                entities = []
+                cursor = 0
+                for span in spans:
+                    start = text.index(span, cursor)
+                    end = start + len(span)
+                    cursor = end
+                    entities.append(SimpleNamespace(label_="PER", text=span, end_char=end))
+                return SimpleNamespace(ents=entities)
+
+        text = (
+            "Landkreis Lörrach informiert: Die Förderung wurde erteilt, die "
+            "Zusage liegt vor, der Ablauf ist geregelt. Kim wurde vorgestellt."
+        )
+        with (
+            mock.patch.object(core, "SPACY_AVAILABLE", True),
+            mock.patch.object(core, "NER_MODELS", ("fixture-model",)),
+            mock.patch.object(core, "_get_spacy_model", return_value=FakeModel()),
+        ):
+            names = core.detect_person_names_ner(text)
+        self.assertEqual(names, ["Kim"])
+
     def test_mixed_case_email_is_replaced_without_lowercasing_the_source(self):
         email = "Alice.Example@Unknown.com"
         anonymizer = DocumentAnonymizer(require_ner=False)
@@ -420,6 +469,78 @@ class TestDocxBoundary(unittest.TestCase):
             self.assertFalse(success)
             self.assertEqual(count, 0)
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), before)
+
+    def test_trusted_template_media_hash_match_publishes(self):
+        """Media byte-identical to the trusted template's media passes."""
+        from docx import Document
+        from docx.shared import Inches
+        import base64
+
+        png = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+            image = temp_dir / "pixel.png"
+            image.write_bytes(png)
+
+            template_path = temp_dir / "template.docx"
+            template = Document()
+            template.add_paragraph("Vorlage")
+            template.add_picture(str(image), width=Inches(0.1))
+            template.save(template_path)
+
+            document_path = temp_dir / "report.docx"
+            document = Document()
+            document.add_paragraph(ORIGINAL)
+            document.add_picture(str(image), width=Inches(0.1))
+            document.save(document_path)
+
+            success, count = DocumentAnonymizer(
+                require_ner=False, trusted_template_path=str(template_path)
+            ).anonymize_file(str(document_path), profile())
+            self.assertTrue(success)
+            self.assertGreaterEqual(count, 1)
+
+    def test_trusted_template_media_hash_mismatch_still_blocks(self):
+        """A foreign image beside a template-matching one still fails closed."""
+        from docx import Document
+        from docx.shared import Inches
+        import base64
+
+        png_template = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        )
+        png_foreign = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+            template_image = temp_dir / "template_pixel.png"
+            template_image.write_bytes(png_template)
+            foreign_image = temp_dir / "foreign_pixel.png"
+            foreign_image.write_bytes(png_foreign)
+
+            template_path = temp_dir / "template.docx"
+            template = Document()
+            template.add_paragraph("Vorlage")
+            template.add_picture(str(template_image), width=Inches(0.1))
+            template.save(template_path)
+
+            document_path = temp_dir / "report.docx"
+            document = Document()
+            document.add_paragraph(ORIGINAL)
+            document.add_picture(str(template_image), width=Inches(0.1))
+            document.add_picture(str(foreign_image), width=Inches(0.1))
+            document.save(document_path)
+            before = hashlib.sha256(document_path.read_bytes()).hexdigest()
+
+            success, count = DocumentAnonymizer(
+                require_ner=False, trusted_template_path=str(template_path)
+            ).anonymize_file(str(document_path), profile())
+            self.assertFalse(success)
+            self.assertEqual(count, 0)
+            self.assertEqual(hashlib.sha256(document_path.read_bytes()).hexdigest(), before)
 
 
 @unittest.skipUnless(EXCEL_AVAILABLE, "openpyxl required")

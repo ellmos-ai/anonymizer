@@ -17,6 +17,26 @@
   und `ellmos-module.json`-`visibility` (→ `public-candidate`) von der
   bisherigen "PRIVAT"-Kennzeichnung befreit; tatsächliche Veröffentlichung
   bleibt ein separater Freigabeschritt (/repo-publish-check, Operator).
+- **Template-Medien-Fix (foerderplaner-Referenzlauf, Fund A):** DOCX/XLSX mit
+  eingebetteten Bildern (z. B. Briefkopf-Logo im Berichts-Template) blockierten
+  bisher IMMER die Ver-/De-Anonymisierung (`_has_unverified_package_content`
+  ohne Ausnahme). Neuer optionaler `trusted_template_path` (API + CLI
+  `--trusted-template` + ENV `ANONYMIZER_TRUSTED_TEMPLATE`) lässt gezielt
+  `word/media`/`xl/media`-Einträge passieren, deren SHA-256-Hash
+  byte-identisch aus dem angegebenen Template stammt; jeder andere Medien-
+  Eintrag sowie Embeddings/ActiveX/VBA/OLE bleiben unverändert gesperrt
+  (fail-closed-Prinzip erhalten). `DocumentDeanonymizer.deanonymize_file`/
+  `deanonymize_folder` geben den Parameter durch, statt intern immer mit
+  Default-`DocumentAnonymizer()` zu arbeiten.
+- **NER-Plausibilitätsfilter erweitert (foerderplaner-Referenzlauf, Fund B):**
+  `de_core_news_lg` markierte generische Verwaltungs-/Berichtssubstantive
+  ("Landkreis Lörrach", "Förderung", "Zusage", "Ablauf") fälschlich als
+  Personennamen. `_looks_like_person_name()` prüft Gattungsbegriffe jetzt an
+  JEDER Wortposition (nicht mehr nur bei Einzelwort-Treffern) gegen eine
+  erweiterte Verwaltungs-/Einrichtungs-/Berichtsvokabular-Liste
+  (`_NER_GENERIC_REPORT_NOUNS`); die Stoppwortliste für satzfragment-
+  verdächtige Spans wurde um Reflexivpronomen und Modal-/Hilfsverben ergänzt.
+  Echte synthetische Namen ("Kim", "Anna Muster") bleiben erkannt.
 
 ## 0.2.0 — 2026-07-16
 

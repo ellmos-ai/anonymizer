@@ -21,6 +21,19 @@ Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
 - Die automatische Personennamenerkennung arbeitet standardmäßig fail-closed:
   fehlen spaCy oder die konfigurierten Modelle, bricht der Scan ab. Ein
   reduzierter Modus muss explizit mit `require_ner=False` gewählt werden.
+- Die NER-Personennamenerkennung filtert erkannte Treffer zusätzlich gegen
+  eine Gattungsbegriff-/Stoppwortliste (Verwaltungs-, Rollen- und
+  Berichtsvokabular wie „Landkreis", „Förderung", „Zusage", „Ablauf") sowie
+  gegen Wort- und Satzfragment-Muster, bevor sie ersetzt werden — reduziert
+  NER-Fehlalarme auf generischen deutschen Substantiven, ohne die
+  fail-closed-Grundregel zu lockern.
+- `word/media`/`xl/media`-Einträge (eingebettete Bilder) in DOCX/XLSX
+  blockieren standardmäßig die Veröffentlichung (keine OCR-Garantie). Ein
+  optionales, vertrauenswürdiges Template (`trusted_template_path`/CLI
+  `--trusted-template`/ENV `ANONYMIZER_TRUSTED_TEMPLATE`) erlaubt gezielt
+  Medien, deren SHA-256-Hash byte-identisch aus diesem Template stammt —
+  jeder andere oder abweichende Medien-Eintrag blockiert weiterhin. Siehe
+  „Unterstützte Formate" für Details.
 
 ## Unterstützte Formate
 
@@ -36,6 +49,27 @@ Bild- oder eingebettete Binärinhalte in DOCX/XLSX und bildhaltige PDFs werden
 standardmäßig abgelehnt, weil das Modul keine OCR-Garantie geben kann.
 `allow_unverified_media=True` ist nur für einen separat geprüften lokalen
 Workflow vorgesehen und darf nicht als vollständige Anonymisierung gelten.
+
+**Vertrauenswürdiges Template statt Pauschal-Freigabe:** Ein produktives
+Berichts-Template (z. B. mit Briefkopf-Logo) enthält typischerweise
+`word/media`/`xl/media`-Bilder, die den fail-closed-Medienstopp sonst bei
+jeder darauf basierenden DOCX/XLSX auslösen würden — auch bei der eigenen
+De-Anonymisierung des fertig ausgefüllten Berichts. Statt pauschal
+`allow_unverified_media=True` zu setzen, kann ein Template als Referenz
+angegeben werden:
+
+```python
+anonymizer = DocumentAnonymizer(trusted_template_path=r"C:\Vorlagen\bericht.docx")
+```
+
+Beim Verarbeiten einer Datei werden die SHA-256-Hashes aller
+`word/media`/`xl/media`-Einträge der Zieldatei gegen die Hashes der
+Template-Bilder geprüft. Nur byte-identische Treffer gelten als verifiziert
+und passieren; jedes andere, veränderte oder fremde Bild blockiert weiterhin
+die Veröffentlichung — `word/embeddings`, `word/activeX` sowie
+VBA-/OLE-Payloads bleiben davon unberührt und sperren unverändert immer. CLI:
+`--trusted-template <pfad>` bei `anonymize` und `deanonymize`; alternativ die
+Umgebungsvariable `ANONYMIZER_TRUSTED_TEMPLATE`.
 
 Ordner werden zunächst vollständig in einer lokalen Arbeitsfläche geprüft.
 Der fertige Zielbaum wird anschließend über einen gleichvolumigen
@@ -149,6 +183,10 @@ nicht in Prozessargumenten:
 anonymizer self-test
 anonymizer anonymize C:\Eingang\Fallakte C:\Ausgang\K_ABC123
 anonymizer deanonymize C:\Ausgang\K_ABC123 C:\_Local_Anon\keys\K_ABC123.schluessel.enc C:\_Local_Anon\Wiederhergestellt
+
+# Mit Template-Bildern (Briefkopf/Logo) im Berichts-Template:
+anonymizer anonymize --trusted-template C:\Vorlagen\bericht.docx C:\Eingang\Fallakte C:\Ausgang\K_ABC123
+anonymizer deanonymize --trusted-template C:\Vorlagen\bericht.docx C:\Ausgang\K_ABC123 C:\_Local_Anon\keys\K_ABC123.schluessel.enc C:\_Local_Anon\Wiederhergestellt
 ```
 
 Der installierte Entry-Point und `python -m anonymizer_modul.core` verwenden

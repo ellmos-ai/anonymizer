@@ -24,7 +24,7 @@ technischen Gates.
 | Gate | Ergebnis |
 |---|---|
 | Syntax/Import | grün — `py_compile` für Core und Schutztests |
-| Vollständige Testsuite | grün — 54 bestanden, 2 OS-Skips, 3 Subtests bestanden (Stand 0.2.1, nach defusedxml-Umstellung erneut verifiziert) |
+| Vollständige Testsuite | grün — 58 bestanden, 2 OS-Skips, 3 Subtests bestanden (Stand 0.2.1, nach defusedxml-Umstellung + Template-Medien-/NER-Plausibilitätsfix erneut verifiziert) |
 | Schutz-PoCs / alternative Eingaben | grün — 31 Schutztests: OOXML-Attribute/Charts, NER, Casing, PDF-TOC, Reparse und atomare Veröffentlichung |
 | CLI | grün — UTF-8-Selbsttest und installierte Wheel-Hilfe mit echten Unterbefehlen |
 | Build und Archivinhalt | grün — isolierter sdist-/Wheel-Bau; keine Locks, Backups, Caches oder Bytecode im Wheel |

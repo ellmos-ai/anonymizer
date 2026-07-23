@@ -43,6 +43,7 @@ Copyright (c) 2026 ellmos / BACH Contributors — MIT License
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -54,7 +55,7 @@ import zipfile
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, FrozenSet, List, Optional, Tuple
 from defusedxml import ElementTree
 
 
@@ -462,6 +463,10 @@ _UNVERIFIED_PACKAGE_PREFIXES = (
     "word/media/", "word/embeddings/", "word/activeX/",
     "xl/media/", "xl/embeddings/", "xl/activeX/",
 )
+# Nur Bild-/Medien-Einträge (nicht Embeddings/ActiveX) dürfen ueberhaupt gegen
+# ein vertrauenswürdiges Template freigegeben werden; die anderen Praefixe in
+# _UNVERIFIED_PACKAGE_PREFIXES bleiben unconditional gesperrt.
+_TRUSTED_MEDIA_PREFIXES = ("word/media/", "xl/media/")
 
 
 def _is_relative_to(path: Path, parent: Path) -> bool:
@@ -577,15 +582,55 @@ def _validate_archive(path: Path) -> List[zipfile.ZipInfo]:
         return infos
 
 
-def _has_unverified_package_content(path: Path) -> bool:
+def _has_unverified_package_content(
+    path: Path, trusted_media_hashes: Optional[FrozenSet[str]] = None
+) -> bool:
+    """True wenn die OOXML-Datei unverifizierten Medien-/Makroinhalt enthaelt.
+
+    word/media|xl/media-Eintraege gelten als verifiziert, wenn ihr SHA-256
+    byte-identisch in trusted_media_hashes vorkommt (siehe
+    _load_trusted_template_media_hashes). Embeddings/ActiveX-Eintraege und
+    VBA-/OLE-Payloads bleiben davon unberuehrt und sperren immer.
+    """
     infos = _validate_archive(path)
-    for info in infos:
-        name = info.filename.replace("\\", "/").lstrip("/")
-        if name.startswith(_UNVERIFIED_PACKAGE_PREFIXES):
-            return True
-        if name.casefold().endswith(("vbaproject.bin", ".ole")):
-            return True
+    with zipfile.ZipFile(path, "r") as archive:
+        for info in infos:
+            name = info.filename.replace("\\", "/").lstrip("/")
+            if name.casefold().endswith(("vbaproject.bin", ".ole")):
+                return True
+            if name.startswith(_TRUSTED_MEDIA_PREFIXES):
+                if trusted_media_hashes and hashlib.sha256(
+                    archive.read(info)
+                ).hexdigest() in trusted_media_hashes:
+                    continue
+                return True
+            if name.startswith(_UNVERIFIED_PACKAGE_PREFIXES):
+                return True
     return False
+
+
+def _load_trusted_template_media_hashes(
+    template_path: Optional[str],
+) -> Optional[FrozenSet[str]]:
+    """Berechnet SHA-256-Hashes aller word/media|xl/media-Eintraege eines
+    vertrauenswuerdigen Templates.
+
+    Gibt None zurueck, wenn kein Template konfiguriert ist (unveraendertes
+    Verhalten: jeder Medien-Eintrag in verarbeiteten Dateien sperrt weiterhin).
+    Ein konfiguriertes, aber ungueltiges/fehlendes Template wirft bewusst
+    (fail-closed statt eine vermeintlich aktive Freigabe still zu ignorieren).
+    """
+    if not template_path:
+        return None
+    path = _validate_regular_input(Path(template_path))
+    infos = _validate_archive(path)
+    hashes: set = set()
+    with zipfile.ZipFile(path, "r") as archive:
+        for info in infos:
+            name = info.filename.replace("\\", "/").lstrip("/")
+            if name.startswith(_TRUSTED_MEDIA_PREFIXES):
+                hashes.add(hashlib.sha256(archive.read(info)).hexdigest())
+    return frozenset(hashes)
 
 
 def _rewrite_xml_payload(data: bytes, replacements: List[Tuple[str, str]]) -> Tuple[bytes, int]:
@@ -783,6 +828,17 @@ _NER_MID_SPAN_STOPWORDS = {
     "zu", "zur", "zum", "auf", "in", "an", "bei", "mit", "von", "vom",
     "fuer", "für", "ueber", "über", "unter", "durch", "ohne", "gegen", "um",
     "ist", "sind", "war", "hat", "eine", "einen", "einer",
+    # Reflexivpronomen/Modal- und Hilfsverben -- in echten Namen nie
+    # enthalten, aber in klinischen/foerderpaedagogischen Beobachtungssaetzen
+    # haeufig ("... bewegt sich grob", "... kann sich noch nicht ..."). Ohne
+    # diese Erweiterung reisst ein faelschlich zu weit gefasster NER-Span
+    # ganze Beobachtungsfragmente statt nur des Namens heraus.
+    "sich", "ihm", "ihr", "ihn", "ihre", "ihrem", "ihren", "ihrer",
+    "sein", "seine", "seinem", "seinen", "seiner",
+    "wird", "wurde", "kann", "muss", "soll", "will", "werden", "worden",
+    "hatte", "haette", "hätte", "waere", "wäre", "wuerde", "würde",
+    "dass", "weil", "wenn", "als", "wie", "noch", "nur", "sehr",
+    "man", "es", "er", "sie",
 }
 
 # Generische Rollenbegriffe (Klient/Patient/Angehoerige) -- werden von NER
@@ -797,6 +853,26 @@ _NER_GENERIC_ROLE_NOUNS = {
     "mutter", "vater", "eltern", "bruder", "schwester", "geschwister",
     "therapeut", "therapeutin", "betreuer", "betreuerin",
     "lehrer", "lehrerin", "mitarbeiter", "mitarbeiterin",
+}
+
+# Verwaltungs-/Einrichtungs- und Berichts-Gattungsbegriffe -- reales
+# Fehlalarm-Muster: NER verschmilzt ein Gattungswort MIT einem echten
+# Eigennamen zu einem einzigen PERSON-Span (z.B. "Landkreis Loerrach",
+# "Jugendamt Musterstadt") oder markiert ein einzelnes Berichts-Substantiv
+# faelschlich als Namen ("Foerderung", "Zusage", "Ablauf"). Client- und
+# themenunabhaengig, gilt fuer jeden Foerder-/Hilfeplanbericht.
+_NER_GENERIC_REPORT_NOUNS = {
+    "landkreis", "kreis", "stadt", "gemeinde", "bezirk", "region",
+    "amt", "jugendamt", "landesamt", "sozialamt", "gesundheitsamt",
+    "behoerde", "behörde", "dienststelle", "verwaltung", "traeger", "träger",
+    "verein", "institut", "einrichtung", "gruppe", "abteilung",
+    "schule", "kita", "kindergarten", "klasse",
+    "foerderung", "förderung", "zusage", "ablauf", "bericht", "termin",
+    "gespraech", "gespräch", "sitzung", "protokoll",
+    "hilfeplan", "foerderplan", "förderplan", "ziel", "ziele",
+    "massnahme", "maßnahme", "massnahmen", "maßnahmen",
+    "entwicklung", "verlauf", "stand", "beginn", "ende", "zeitraum",
+    "datum", "unterschrift", "anlage", "anhang",
 }
 
 
@@ -815,6 +891,7 @@ def _looks_like_person_name(name: str) -> bool:
     words = name.split()
     if not (1 <= len(words) <= 4):
         return False
+    cleaned_words = []
     for word in words:
         cleaned = word.strip(".,;:!?()[]{}\"'-")
         if not cleaned:
@@ -823,7 +900,15 @@ def _looks_like_person_name(name: str) -> bool:
             return False
         if not cleaned[0].isupper():
             return False
-    if len(words) == 1 and words[0].lower() in _NER_GENERIC_ROLE_NOUNS:
+        cleaned_words.append(cleaned)
+    # Gattungsbegriffe an JEDER Wortposition ablehnen (nicht nur bei
+    # Einzelwort-Treffern) -- NER verschmilzt ein Gattungswort haeufig mit
+    # einem echten Eigennamen zu einem Span ("Landkreis Loerrach").
+    if any(
+        word.lower() in _NER_GENERIC_ROLE_NOUNS
+        or word.lower() in _NER_GENERIC_REPORT_NOUNS
+        for word in cleaned_words
+    ):
         return False
     return True
 
@@ -1220,11 +1305,22 @@ class DocumentAnonymizer:
         3. Schlüssel wird authentifiziert verschlüsselt gespeichert
     """
 
-    def __init__(self, *, require_ner: bool = True, allow_unverified_media: bool = False):
+    def __init__(
+        self,
+        *,
+        require_ner: bool = True,
+        allow_unverified_media: bool = False,
+        trusted_template_path: Optional[str] = None,
+    ):
         self._progress = ProgressInfo()
         self._used_names: set = set()
         self.require_ner = require_ner
         self.allow_unverified_media = allow_unverified_media
+        # ENV-Fallback nur wenn kein expliziter Parameter uebergeben wurde.
+        resolved_template = trusted_template_path or os.environ.get(
+            "ANONYMIZER_TRUSTED_TEMPLATE"
+        )
+        self.trusted_media_hashes = _load_trusted_template_media_hashes(resolved_template)
         self.global_whitelist = self._load_global_whitelist()
 
     def _load_global_whitelist(self) -> dict:
@@ -1815,7 +1911,10 @@ class DocumentAnonymizer:
         """Anonymisiert ein Word-Dokument."""
         if not DOCX_AVAILABLE:
             return False, 0
-        if _has_unverified_package_content(path) and not self.allow_unverified_media:
+        if (
+            _has_unverified_package_content(path, self.trusted_media_hashes)
+            and not self.allow_unverified_media
+        ):
             return False, 0
 
         doc = Document(str(path))
@@ -1967,7 +2066,10 @@ class DocumentAnonymizer:
         """
         if not EXCEL_AVAILABLE:
             return False, 0
-        if _has_unverified_package_content(path) and not self.allow_unverified_media:
+        if (
+            _has_unverified_package_content(path, self.trusted_media_hashes)
+            and not self.allow_unverified_media
+        ):
             return False, 0
 
         try:
@@ -2233,10 +2335,17 @@ class DocumentDeanonymizer:
     def deanonymize_file(
         self,
         filepath: str,
-        profile: AnonymProfile
+        profile: AnonymProfile,
+        trusted_template_path: Optional[str] = None,
     ) -> Tuple[bool, int]:
         """
         De-anonymisiert eine einzelne Datei (umgekehrte Mappings).
+
+        trusted_template_path: siehe DocumentAnonymizer — erlaubt die
+        Wiederherstellung von DOCX/XLSX-Ausgaben, deren eingebettete Medien
+        byte-identisch aus einem vertrauenswuerdigen Vorlagen-Template stammen
+        (sonst faellt die Deanonymisierung jedes Template-basierten Berichts
+        auf den generellen unverifizierten-Medien-Stop zurueck).
         """
         # Umgekehrte Mappings erstellen
         reverse_profile = AnonymProfile(
@@ -2250,7 +2359,7 @@ class DocumentDeanonymizer:
             reverse_profile.mappings[category] = {v: k for k, v in mapping.items()}
 
         # Anonymizer mit umgekehrten Mappings nutzen
-        anon = DocumentAnonymizer()
+        anon = DocumentAnonymizer(trusted_template_path=trusted_template_path)
         return anon.anonymize_file(filepath, reverse_profile)
 
     def deanonymize_folder(
@@ -2259,7 +2368,8 @@ class DocumentDeanonymizer:
         schluessel_path: str,
         password: str,
         output_folder: str,
-        client_id: str = None
+        client_id: str = None,
+        trusted_template_path: Optional[str] = None,
     ) -> AnonymResult:
         """
         De-anonymisiert alle Dokumente in einem Ordner.
@@ -2269,6 +2379,7 @@ class DocumentDeanonymizer:
             schluessel_path: Pfad zur .schluessel.enc Datei (oder None wenn client_id gegeben)
             password: Passwort für den Schlüssel
             output_folder: Zielordner (z.B. _ready_for_export/Max_Mustermann/)
+            trusted_template_path: siehe DocumentAnonymizer/deanonymize_file
             client_id: Klienten-ID — wenn angegeben, wird der lokale Schlüssel genutzt
         """
         # Schlüssel laden
@@ -2338,7 +2449,9 @@ class DocumentDeanonymizer:
 
                     if filepath.suffix.lower() in copy_only_suffixes:
                         continue
-                    success, count = self.deanonymize_file(str(staged_file), profile)
+                    success, count = self.deanonymize_file(
+                        str(staged_file), profile, trusted_template_path=trusted_template_path
+                    )
                     if not success:
                         raise ValueError("de-anonymization failed")
                     result.anonymized_files += 1
@@ -2376,11 +2489,23 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--allow-reduced-ner", action="store_true",
         help="bewusst ohne vollständige NER-Abdeckung arbeiten",
     )
+    anonymize_parser.add_argument(
+        "--trusted-template", dest="trusted_template", default=None,
+        help=(
+            "Pfad zu einer vertrauenswürdigen DOCX/XLSX-Vorlage; deren "
+            "word/media|xl/media-Einträge dürfen byte-identisch übernommen "
+            "werden (sonst ANONYMIZER_TRUSTED_TEMPLATE-Env)"
+        ),
+    )
 
     deanonymize_parser = subparsers.add_parser("deanonymize", help="Ordner lokal wiederherstellen")
     deanonymize_parser.add_argument("source")
     deanonymize_parser.add_argument("key")
     deanonymize_parser.add_argument("output")
+    deanonymize_parser.add_argument(
+        "--trusted-template", dest="trusted_template", default=None,
+        help="siehe anonymize --trusted-template",
+    )
 
     args = parser.parse_args(argv)
 
@@ -2425,7 +2550,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         real_name = getpass.getpass("Echter Name (verborgene Eingabe): ")
         birth_date = getpass.getpass("Geburtsdatum TT.MM.JJJJ (verborgene Eingabe): ")
         password = getpass.getpass("Schlüsselpasswort (mindestens 12 Zeichen): ")
-        anonymizer = DocumentAnonymizer(require_ner=not args.allow_reduced_ner)
+        anonymizer = DocumentAnonymizer(
+            require_ner=not args.allow_reduced_ner,
+            trusted_template_path=args.trusted_template,
+        )
         scanned = anonymizer.scan_folder_for_sensitive_data(args.source)
         profile = anonymizer.create_profile(real_name, birth_date, scanned_data=scanned)
         result = anonymizer.anonymize_folder(
@@ -2440,7 +2568,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.command == "deanonymize":
         password = getpass.getpass("Schlüsselpasswort: ")
         result = DocumentDeanonymizer().deanonymize_folder(
-            args.source, args.key, password, args.output
+            args.source, args.key, password, args.output,
+            trusted_template_path=args.trusted_template,
         )
         print(
             f"Verarbeitet: {result.processed_files}; "

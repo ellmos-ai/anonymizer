@@ -52,7 +52,10 @@ worksheet-generator + Berichts-Kern)
 
 - [ ] Den realen foerderplaner-Konsumenten in einem separaten, gelockten Lauf
   gegen den strikten NER-/Medienvertrag integrieren und dessen eigene veraltete
-  Dokumentation bereinigen.
+  Dokumentation bereinigen. Der bisherige Referenzlauf deckte zwei reale
+  Defekte auf (Template-Medien-Blocker, NER-Overblocking) — siehe „Erledigt"
+  2026-07-23 —, ein erneuter Referenzlauf gegen den gefixten Stand steht noch
+  aus (geplant als Folge-Rerun).
 - [ ] Einen kontrollierten OCR-Workflow definieren, bevor bildhaltige
   DOCX/XLSX/PDF-Dateien als anonymisierbar gelten dürfen.
 - [ ] Optional: NER-Test zusätzlich mit `en_core_web_lg` wiederholen (in
@@ -72,6 +75,32 @@ worksheet-generator + Berichts-Kern)
 
 ## Erledigt
 
+- [x] 2026-07-23: **Referenzlauf-Fund A behoben (Template-Medien-Blocker):**
+  DOCX/XLSX-Vorlagen mit eingebetteten Bildern (Briefkopf/Logo) ließen sich
+  nie de-anonymisieren, weil `DocumentDeanonymizer.deanonymize_file` intern
+  immer `DocumentAnonymizer()` mit `allow_unverified_media=False` und ohne
+  Ausnahme instanziierte. Neuer optionaler `trusted_template_path` (API +
+  CLI `--trusted-template` + ENV `ANONYMIZER_TRUSTED_TEMPLATE`) verifiziert
+  `word/media`/`xl/media`-Einträge per SHA-256 gegen ein angegebenes
+  Template; nur byte-identische Treffer passieren, jeder andere Medien-
+  Eintrag sowie Embeddings/ActiveX/VBA/OLE bleiben unverändert gesperrt.
+  Regressionstests: `test_trusted_template_media_hash_match_publishes`,
+  `test_trusted_template_media_hash_mismatch_still_blocks`
+  (`tests/test_security_boundaries.py`).
+- [x] 2026-07-23: **Referenzlauf-Fund B behoben (NER-Overblocking):**
+  `de_core_news_lg` markierte reale Verwaltungs-/Berichtssubstantive
+  ("Landkreis Lörrach", "Förderung", "Zusage", "Ablauf") als Personennamen.
+  `_looks_like_person_name()` prüft Gattungsbegriffe jetzt an jeder
+  Wortposition (nicht nur bei Einzelwort-Treffern) gegen die erweiterte
+  `_NER_GENERIC_REPORT_NOUNS`-Liste; `_NER_MID_SPAN_STOPWORDS` um
+  Reflexivpronomen/Modalverben ergänzt (Fragment-Ersetzungs-Risiko wie im
+  berichteten "Grob bewegt Kim sich"-Muster reduziert — dieser konkrete Fall
+  wurde mangels Original-Quelltext nicht eigenständig reproduziert, sondern
+  über denselben Mechanismus mitgehärtet). Echte synthetische Namen ("Kim",
+  "Anna Muster") bleiben erkannt. Regressionstests:
+  `test_looks_like_person_name_rejects_generic_report_and_admin_nouns`,
+  `test_ner_overblocking_generic_nouns_filtered_end_to_end`
+  (`tests/test_security_boundaries.py`).
 - [x] 2026-07-16: Vollständiger Privacy-/Security-Review des 0.1.0-Snapshots;
   fail-closed Ordnerveröffentlichung, Pfad-/Symlink-/Cloud-Grenzen,
   transaktionale Einzeldatei-Verarbeitung, sichere Schlüsseldateien,

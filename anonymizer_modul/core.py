@@ -36,9 +36,9 @@ Optionale Abhängigkeiten (pip install ...):
   pikepdf        — PDF-AES-256-Verschlüsselung
   openpyxl       — Excel-Anonymisierung
 
-Version: 0.2.2 (NER-Plausibilitätsfilter strukturell auf POS/Lemma
-umgestellt 2026-07-23; Basis: 0.2.1 defusedxml-Härtung, 0.2.0 Sicherheits-
-und Datenschutz-Härtung 2026-07-16)
+Version: 0.2.3 (Anker-Prinzip gegen NER-Overblocking 2026-07-23; Basis:
+0.2.2 POS/Lemma-Span-Validierung, 0.2.1 defusedxml-Härtung, 0.2.0
+Sicherheits- und Datenschutz-Härtung 2026-07-16)
 Copyright (c) 2026 ellmos / BACH Contributors — MIT License
 """
 
@@ -890,6 +890,12 @@ _NER_GENERIC_REPORT_NOUNS = {
 # zum Verwerfen des ganzen Namens fuehren.
 _NER_TITLE_TOKENS = {"dr", "prof", "dipl", "dipl-ing", "mag"}
 
+# Anredewoerter -- zusammen mit _NER_TITLE_TOKENS der Anker-Wortschatz fuer
+# ein unmittelbar vorangehendes Titel-/Anrede-Token (0.2.3 Anker-Prinzip,
+# siehe _run_has_anchor).
+_NER_ADDRESS_TOKENS = {"frau", "herr"}
+_NER_ANCHOR_TITLE_TOKENS = _NER_TITLE_TOKENS | _NER_ADDRESS_TOKENS
+
 # Bekannte deutsche Vornamen als Rettungsanker bei POS-Fehltagging (siehe
 # _is_name_token) -- KEIN Pflichtanker: unbekannte Namen (z.B. "Amara
 # Diallo") werden weiterhin allein ueber PROPN erkannt, diese Liste rettet
@@ -929,7 +935,7 @@ def _is_name_token(token) -> bool:
     return False
 
 
-def _extract_name_token_runs(ent) -> List[list]:
+def _extract_name_token_runs(ent, doc_preceding_token=None) -> List[Tuple[list, object]]:
     """
     Zerlegt einen NER-PER-Span in seine maximalen zusammenhaengenden
     Token-Teilsequenzen, die _is_name_token als Namensbestandteil
@@ -941,19 +947,64 @@ def _extract_name_token_runs(ent) -> List[list]:
     im foerderplaner-Referenzlauf: "Kim" aus "Grob bewegt Kim sich" (ADV/
     VERB/PRON drumherum) oder "Kim" aus "... braucht Kim noch
     Schwierigkeiten" (nachfolgendes NOUN faelschlich mit im Span).
+
+    Gibt je Teilsequenz ein (tokens, preceding_token)-Paar zurueck: das
+    unmittelbar vorangehende Token wird fuer den Anker-Check in
+    _run_has_anchor gebraucht (Titel/Anrede wie "Dr."/"Frau" stehen
+    typischerweise AUSSERHALB des von spaCy erkannten PER-Spans). Beginnt
+    eine Teilsequenz am Anfang von ent, ist das vorangehende Token
+    doc_preceding_token (das Token unmittelbar vor ent im Dokument, None
+    am Textanfang); beginnt sie spaeter, ist es bereits Teil von ent selbst.
     """
-    runs: List[list] = []
+    ent_tokens = list(ent)
+    runs: List[Tuple[list, object]] = []
     current: list = []
-    for token in ent:
+    current_start = None
+    for i, token in enumerate(ent_tokens):
         if _is_name_token(token):
+            if current_start is None:
+                current_start = i
             current.append(token)
         else:
             if current:
-                runs.append(current)
+                preceding = ent_tokens[current_start - 1] if current_start > 0 else doc_preceding_token
+                runs.append((current, preceding))
             current = []
+            current_start = None
     if current:
-        runs.append(current)
+        preceding = ent_tokens[current_start - 1] if current_start > 0 else doc_preceding_token
+        runs.append((current, preceding))
     return runs
+
+
+def _run_has_anchor(tokens: list, preceding_token=None) -> bool:
+    """
+    Anker-Prinzip (0.2.3, Operator-Design nach RUN3-Regression): reines
+    POS==PROPN kippt in der Praxis zu durchlaessig (spaCy misstaggt
+    Substantive in Aufzaehlungs-/Fachtext-Kontexten haeufig als PROPN).
+    Ersetzungspolitik daher zusaetzlich nach Anker gestaffelt:
+
+    - Mehrwort-Spans (>=2 Tokens nach der PROPN-Kuerzung) gelten als
+      hinreichend verifiziert (Vor+Nachname-Muster, deckt auch Namen ohne
+      Lexikon-Eintrag wie "Amara Diallo").
+    - Einzelwort-Spans brauchen einen Anker: einen bekannten deutschen
+      Vornamen (Lexikon) ODER ein unmittelbar vorangehendes Titel-/
+      Anrede-Token (Dr./Prof./Frau/Herr).
+    - Ohne Anker gilt der Treffer als unsicher und wird NICHT destruktiv
+      ersetzt (siehe detect_person_names_ner: landet in einer sichtbaren,
+      aber nicht-destruktiven Review-Liste statt im Ersetzungs-Mapping).
+    """
+    if len(tokens) >= 2:
+        return True
+    cleaned = tokens[0].text.strip(".,;:!?()[]{}\"'-").lower()
+    if cleaned in _NER_KNOWN_FIRST_NAMES:
+        return True
+    if preceding_token is not None:
+        preceding_text = getattr(preceding_token, "text", "")
+        preceding_clean = preceding_text.strip(".,;:!?()[]{}\"'-").lower()
+        if preceding_clean in _NER_ANCHOR_TITLE_TOKENS:
+            return True
+    return False
 
 
 def _tokens_to_name_text(tokens: list) -> str:
@@ -1063,7 +1114,7 @@ def detect_person_names_ner(
     whitelist: Optional[List[str]] = None,
     *,
     fail_on_ambiguous: bool = False,
-) -> List[str]:
+) -> Tuple[List[str], List[str]]:
     """
     Erkennt Personennamen im Text via spaCy-NER (DE+EN kombiniert).
 
@@ -1072,19 +1123,32 @@ def detect_person_names_ner(
     Substantiv grossgeschrieben wird. Erkennt auch unbekannte Namen und
     Schreibvarianten, die keine manuell gepflegte Liste je abdecken koennte.
 
+    Reines POS==PROPN als Akzeptanzkriterium kippt in der Praxis zu
+    durchlaessig (spaCy misstaggt Substantive in Aufzaehlungs-/
+    Fachtext-Kontexten haeufig als PROPN, RUN3-Regressionsbefund). Die
+    Ersetzungspolitik folgt daher zusaetzlich dem Anker-Prinzip (0.2.3,
+    siehe _run_has_anchor): Mehrwort-Spans gelten als hinreichend
+    verifiziert; Einzelwort-Spans nur mit Anker (bekannter Vorname oder
+    vorangehendes Titel-/Anrede-Token). Einzelwort-Treffer OHNE Anker
+    werden NICHT destruktiv ersetzt, sondern getrennt als Review-Kandidaten
+    zurueckgegeben.
+
     Args:
         text: Zu scannender Text
         whitelist: Namen, die trotz Erkennung NICHT zurueckgegeben werden
                    (z.B. Therapeut/Amtspersonen)
 
     Returns:
-        Sortierte Liste eindeutiger erkannter Personennamen
+        (confirmed, review_only) -- je eine sortierte Liste eindeutiger
+        Namen. confirmed ist fuer die destruktive Ersetzung vorgesehen;
+        review_only ist sichtbar, aber NICHT im Ersetzungs-Mapping.
     """
     if not SPACY_AVAILABLE or not text.strip():
-        return []
+        return [], []
 
     wl_lower = {w.lower() for w in (whitelist or [])}
-    found = set()
+    confirmed = set()
+    review_only = set()
 
     for model_name in NER_MODELS:
         nlp = _get_spacy_model(model_name)
@@ -1096,7 +1160,8 @@ def detect_person_names_ner(
         for offset in range(0, len(text), max_len):
             chunk = text[offset:offset + max_len]
             doc = nlp(chunk)
-            chunk_names = set()
+            chunk_confirmed = set()
+            chunk_review = set()
             for ent in doc.ents:
                 if ent.label_ not in _NER_PERSON_LABELS:
                     continue
@@ -1106,7 +1171,8 @@ def detect_person_names_ner(
                 # maximalen PROPN-Teilsequenzen gekuerzt, andere Wortarten
                 # (VERB/ADV/ADP/DET/PRON/NOUN/...) reissen NICHT mehr den
                 # gesamten Span mit ("Kim" aus "Grob bewegt Kim sich").
-                for tokens in _extract_name_token_runs(ent):
+                doc_preceding_token = doc[ent.start - 1] if getattr(ent, "start", 0) > 0 else None
+                for tokens, preceding_token in _extract_name_token_runs(ent, doc_preceding_token):
                     name = _tokens_to_name_text(tokens)
                     if not name or any(ch.isdigit() for ch in name):
                         continue
@@ -1125,23 +1191,32 @@ def detect_person_names_ner(
                     next_char = chunk[end_char:end_char + 1]
                     if next_char and next_char.isalpha() and next_char.islower():
                         continue
-                    chunk_names.add(name)
+                    if _run_has_anchor(tokens, preceding_token):
+                        chunk_confirmed.add(name)
+                    else:
+                        chunk_review.add(name)
 
-            if len(chunk_names) > _NER_MAX_NAMES_PER_CHUNK:
+            if len(chunk_confirmed) > _NER_MAX_NAMES_PER_CHUNK:
                 if fail_on_ambiguous:
                     raise RuntimeError(
                         "NER result exceeds the reviewed per-section identity limit"
                     )
                 print(
-                    f"[WARN] NER ({model_name}): {len(chunk_names)} Personennamen in einem "
+                    f"[WARN] NER ({model_name}): {len(chunk_confirmed)} Personennamen in einem "
                     f"Textabschnitt gefunden (> {_NER_MAX_NAMES_PER_CHUNK}) -- vermutlich "
                     f"generisches Referenzmaterial statt Klientendaten, Abschnitt wird "
                     f"NICHT automatisch anonymisiert (Korruptionsrisiko)."
                 )
                 continue
-            found.update(chunk_names)
+            confirmed.update(chunk_confirmed)
+            review_only.update(chunk_review)
 
-    return sorted(found)
+    # Ein Einzelwort-Treffer kann in einem Abschnitt bestaetigt (Anker) und
+    # in einem anderen nur Review-Kandidat sein -- die destruktive
+    # Ersetzung hat Vorrang, sonst bliebe derselbe Name in einem Abschnitt
+    # unersetzt.
+    review_only -= confirmed
+    return sorted(confirmed), sorted(review_only)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1486,7 +1561,11 @@ class DocumentAnonymizer:
             "addresses": [],
             "institutions": [],
             "table_row_names": [],
-            "ner_person_names": []
+            "ner_person_names": [],
+            # Einzelwort-NER-Treffer ohne Anker (0.2.3 Anker-Prinzip) --
+            # sichtbar fuer manuelle Pruefung, aber NICHT im Ersetzungs-
+            # Mapping (create_profile() liest diesen Key bewusst nicht).
+            "ner_review_only": [],
         }
 
         # Telefonnummern finden
@@ -1540,12 +1619,13 @@ class DocumentAnonymizer:
                     "Person-name scanning requires at least one configured spaCy NER model; "
                     "set require_ner=False only for an explicitly reviewed reduced-coverage workflow"
                 )
-            ner_names = detect_person_names_ner(
+            ner_names, ner_review_only = detect_person_names_ner(
                 text,
                 whitelist=self.global_whitelist.get("names", []),
                 fail_on_ambiguous=self.require_ner,
             )
             found["ner_person_names"] = ner_names
+            found["ner_review_only"] = ner_review_only
         elif self.require_ner:
             raise RuntimeError(
                 "Person-name scanning requires spaCy and a configured NER model; "
@@ -1828,7 +1908,8 @@ class DocumentAnonymizer:
             "addresses": [],
             "institutions": [],
             "table_row_names": [],
-            "ner_person_names": []
+            "ner_person_names": [],
+            "ner_review_only": [],
         }
 
         for filepath in filepaths:
@@ -1842,6 +1923,15 @@ class DocumentAnonymizer:
                     for item in found.get(key, []):
                         if item not in combined[key]:
                             combined[key].append(item)
+
+        # Ein Name kann in einer Datei bestaetigt (Anker) und in einer
+        # anderen nur Review-Kandidat sein (unterschiedlicher lokaler
+        # Kontext) -- die Ersetzung greift bereits ueber ner_person_names,
+        # daher die bestaetigten Namen aus der Review-Liste entfernen.
+        combined["ner_review_only"] = [
+            name for name in combined["ner_review_only"]
+            if name not in combined["ner_person_names"]
+        ]
 
         return combined
 
@@ -2606,7 +2696,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     import argparse
     import getpass
 
-    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.2")
+    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.3")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("self-test", aliases=["test"], help="lokalen Selbsttest ausführen")
 

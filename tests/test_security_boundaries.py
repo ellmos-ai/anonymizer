@@ -141,14 +141,20 @@ class TestDetectionBoundary(unittest.TestCase):
                 # end_char=len(text)): chunk[idx:idx+1] ist dann "" (out of
                 # bounds), damit der Wortgrenzen-Check hier nicht eingreift
                 # -- dieser Test prueft ausschliesslich das Mengenlimit.
+                # Zwei PROPN-Tokens pro Entitaet (Vorname+Nachname-Muster),
+                # damit sie ueber das 0.2.3-Anker-Prinzip OHNE Lexikon-/
+                # Titel-Anker als bestaetigt gelten (Mehrwort-Spans sind
+                # immer verifiziert).
                 entities = [
                     FakeEnt([
                         FakeToken(
-                            f"Name{chr(65 + index // 26)}{chr(65 + index % 26)}",
-                            pos="PROPN",
-                            idx=len(text),
-                            ws="",
-                        )
+                            f"Vorname{chr(65 + index // 26)}{chr(65 + index % 26)}",
+                            pos="PROPN", idx=len(text), ws=" ",
+                        ),
+                        FakeToken(
+                            f"Nachname{chr(65 + index // 26)}{chr(65 + index % 26)}",
+                            pos="PROPN", idx=len(text), ws="",
+                        ),
                     ])
                     for index in range(core._NER_MAX_NAMES_PER_CHUNK + 1)
                 ]
@@ -172,7 +178,10 @@ class TestDetectionBoundary(unittest.TestCase):
             ("Grob", "ADV"), ("bewegt", "VERB"), ("Kim", "PROPN"), ("sich", "PRON"),
         )
         runs = core._extract_name_token_runs(FakeEnt(tokens))
-        self.assertEqual([core._tokens_to_name_text(r) for r in runs], ["Kim"])
+        self.assertEqual(
+            [core._tokens_to_name_text(run_tokens) for run_tokens, _preceding in runs],
+            ["Kim"],
+        )
 
     def test_tokens_pass_lemma_denylist_catches_inflected_forms(self):
         """Genitiv 'Landkreises' (Lemma 'Landkreis') wird ueber das Lemma
@@ -204,43 +213,69 @@ class TestDetectionBoundary(unittest.TestCase):
                 f"{candidate!r} should still pass as a plausible person name",
             )
 
+    def test_run_has_anchor_single_word_needs_lexicon_or_title(self):
+        """Direkter Unit-Test des 0.2.3-Anker-Prinzips (Operator-Design
+        nach der RUN3-Regression: reines POS==PROPN kippt in der Praxis zu
+        durchlaessig). Mehrwort-Spans sind immer verifiziert; Einzelwort-
+        Spans brauchen einen Anker (Lexikon-Vorname ODER vorangehendes
+        Titel-/Anrede-Token) -- sonst kein Anker, kein Ersatz."""
+        # Mehrwort: immer Anker, auch ohne Lexikon-Eintrag ("Amara Diallo").
+        self.assertTrue(core._run_has_anchor(fake_tokens(("Amara", "PROPN"), ("Diallo", "PROPN"))))
+        # Einzelwort mit Lexikon-Vorname: Anker.
+        self.assertTrue(core._run_has_anchor(fake_tokens(("Anna", "PROPN"))))
+        # Einzelwort mit vorangehendem Titel-Token: Anker.
+        self.assertTrue(core._run_has_anchor(
+            fake_tokens(("Kim", "PROPN")), preceding_token=FakeToken("Dr.", pos="NOUN")
+        ))
+        self.assertTrue(core._run_has_anchor(
+            fake_tokens(("Kim", "PROPN")), preceding_token=FakeToken("Frau", pos="NOUN")
+        ))
+        # Einzelwort ohne jeden Anker: kein Ersatz (Review-Kandidat).
+        self.assertFalse(core._run_has_anchor(fake_tokens(("Kim", "PROPN"))))
+        self.assertFalse(core._run_has_anchor(
+            fake_tokens(("Umgang", "NOUN")), preceding_token=FakeToken("dem", pos="DET")
+        ))
+
     @unittest.skipUnless(
         core.SPACY_AVAILABLE and core._get_spacy_model("de_core_news_lg") is not None,
         "de_core_news_lg model required for the real NER regression",
     )
-    def test_ner_run2_regression_real_sentences_no_false_names(self):
+    def test_ner_run2_regression_no_failure_class_tokens_confirmed_or_review(self):
         """Regression mit den ECHTEN Saetzen aus dem foerderplaner-
-        Referenzlauf RUN2 (2026-07-23,
-        ARCHIV_2026-07-23_RUN2/UMGEBUNG.md): NER ueberdehnt den PER-Span
-        haeufig auf benachbarte generische Woerter ("Kim Schwierigkeiten",
-        "Grob bewegt Kim sich"); nach der POS-/Lemma-basierten Kuerzung
-        darf ausschliesslich "Kim" uebrig bleiben, nie die generischen
-        Nachbarwoerter oder die flektierte Genitivform "Landkreises"."""
-        cases = [
-            (
-                "Grob bewegt Kim sich altersgemäß, beim Umgang mit kleinen "
-                "Gegenständen mit den Fingern braucht Kim noch etwas "
-                "Unterstützung.",
-                ["Kim"],
-            ),
-            ("Beim Anziehen gelingt es Kim, Klettverschlüsse selbst zu öffnen.", ["Kim"]),
-            ("Beim Essen kommt Kim allein zurecht.", ["Kim"]),
-            ("Kim hat noch Schwierigkeiten bei Knöpfen und Reißverschlüssen.", ["Kim"]),
-            (
-                "Alle Namen, Daten und Einrichtungsangaben in diesem Bericht "
-                "sind fiktiv.",
-                [],
-            ),
-            (
-                "Der Antrag wurde im Rahmen der Bewilligung des fiktiven "
-                "Landkreises Lörrach genehmigt.",
-                [],
-            ),
-            ("Aus fachlicher Sicht sollte die Förderung von Kim weitergehen.", ["Kim"]),
+        Referenzlauf RUN2/RUN3 (2026-07-23): weder in den bestaetigten noch
+        in den Review-Kandidaten duerfen die bekannten Fehlklassen-Tokens
+        auftauchen ("Grob", "Umgang", "Klettverschluesse", "Landkreises",
+        "Einrichtungsangaben", "Foerderung"/"Zusage"/"Ablauf"). "Kim" darf
+        je nach Satzkontext bestaetigt ODER nur Review-Kandidat sein (ohne
+        Anker in einem isolierten Einzelsatz ist Review korrekt -- der
+        eigentliche Klientenname kommt in der echten Pipeline ueber
+        create_profile(real_name=...) unabhaengig von NER ins Profil)."""
+        forbidden = {
+            "grob", "umgang", "klettverschlüsse", "klettverschluesse",
+            "landkreises", "einrichtungsangaben", "förderung", "foerderung",
+            "zusage", "ablauf", "gegenständen", "gegenstaenden",
+            "schwierigkeiten",
+        }
+        texts = [
+            "Grob bewegt Kim sich altersgemäß, beim Umgang mit kleinen "
+            "Gegenständen mit den Fingern braucht Kim noch etwas "
+            "Unterstützung.",
+            "Beim Anziehen gelingt es Kim, Klettverschlüsse selbst zu öffnen.",
+            "Beim Essen kommt Kim allein zurecht.",
+            "Kim hat noch Schwierigkeiten bei Knöpfen und Reißverschlüssen.",
+            "Alle Namen, Daten und Einrichtungsangaben in diesem Bericht sind fiktiv.",
+            "Der Antrag wurde im Rahmen der Bewilligung des fiktiven "
+            "Landkreises Lörrach genehmigt.",
+            "Aus fachlicher Sicht sollte die Förderung von Kim weitergehen.",
         ]
-        for text, expected in cases:
+        for text in texts:
             with self.subTest(text=text):
-                self.assertEqual(sorted(core.detect_person_names_ner(text)), sorted(expected))
+                confirmed, review_only = core.detect_person_names_ner(text)
+                all_hits = {n.lower() for n in confirmed + review_only}
+                self.assertFalse(
+                    all_hits & forbidden,
+                    f"Fehlklassen-Token in {text!r}: {all_hits & forbidden}",
+                )
 
     @unittest.skipUnless(
         core.SPACY_AVAILABLE and core._get_spacy_model("de_core_news_lg") is not None,
@@ -249,8 +284,8 @@ class TestDetectionBoundary(unittest.TestCase):
     def test_ner_run2_regression_positive_names_still_detected(self):
         """Echte synthetische Namen -- inklusive eines Namens OHNE
         Lexikon-Eintrag ('Amara Diallo') -- muessen nach dem strukturellen
-        POS-Fix weiterhin erkannt werden. Die Vornamensliste ist kein
-        Pflichtanker, sondern nur ein Rettungsanker bei POS-Fehltagging."""
+        POS-/Anker-Fix weiterhin (bestaetigt ODER als Review-Kandidat)
+        auftauchen, niemals komplett verschwinden."""
         cases = [
             (
                 "Kim Beispiel wurde vorgestellt. Dr. Anna Muster war "
@@ -261,7 +296,74 @@ class TestDetectionBoundary(unittest.TestCase):
         ]
         for text, expected in cases:
             with self.subTest(text=text):
-                self.assertEqual(set(core.detect_person_names_ner(text)), expected)
+                confirmed, review_only = core.detect_person_names_ner(text)
+                self.assertEqual(set(confirmed) | set(review_only), expected)
+        # "Amara Diallo" ist ein Mehrwort-Span ohne Lexikon-Eintrag -- muss
+        # ueber das Anker-Prinzip BESTAETIGT (nicht nur Review) sein.
+        confirmed, _ = core.detect_person_names_ner("Amara Diallo wurde vorgestellt.")
+        self.assertIn("Amara Diallo", confirmed)
+
+    @unittest.skipUnless(
+        core.SPACY_AVAILABLE and core._get_spacy_model("de_core_news_lg") is not None,
+        "de_core_news_lg model required for the real end-to-end DoD check",
+    )
+    def test_ner_run2_real_akte_end_to_end_no_corruption(self):
+        """Pflicht-DoD (Operator, nach RUN3-Regression): DocumentAnonymizer
+        gegen die ECHTE synthetische RUN2-Akte
+        (C:\\_Local_DEV\\foerderplaner_referenz\\ARCHIV_2026-07-23_RUN2\\quelle\\,
+        synthetisch) -- die tatsaechlich anonymisierte Ausgabe darf KEINE
+        der bekannten Fehlklassen enthalten und muss weiterhin lesbaren,
+        unkorrumpierten Fliesstext liefern. Wird uebersprungen, wenn der
+        Referenzordner auf diesem Host nicht vorhanden ist."""
+        source = Path(r"C:\_Local_DEV\foerderplaner_referenz\ARCHIV_2026-07-23_RUN2\quelle")
+        if not source.is_dir():
+            self.skipTest("RUN2-Referenzakte auf diesem Host nicht vorhanden")
+
+        anon = DocumentAnonymizer(require_ner=True)
+        found = anon.scan_folder_for_sensitive_data(str(source))
+        all_scan_hits = {n.lower() for n in found["ner_person_names"] + found["ner_review_only"]}
+        forbidden = {
+            "grob", "umgang", "klettverschlüsse", "klettverschluesse",
+            "landkreises", "einrichtungsangaben", "förderung", "foerderung",
+            "begleitung", "handlauf", "zähneputzen", "zaehneputzen",
+        }
+        self.assertFalse(all_scan_hits & forbidden, f"Fehlklassen im Scan: {all_scan_hits & forbidden}")
+
+        profile = anon.create_profile(
+            real_name="Kim Beispiel", geburtsdatum="01.02.2018", scanned_data=found
+        )
+        mapped = set(profile.mappings["names"].keys())
+        self.assertIn("Kim", mapped)
+        self.assertIn("Kim Beispiel", mapped)
+        self.assertFalse({m.lower() for m in mapped} & forbidden)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "out"
+            result = anon.anonymize_folder(
+                str(source), profile, "ein-langes-lokales-testpasswort",
+                output_folder=str(output),
+            )
+            self.assertEqual(result.errors, [])
+            self.assertEqual(result.anonymized_files, 3)
+            published_text = "\n".join(
+                f.read_text(encoding="utf-8") for f in output.rglob("*.txt")
+            ) + "\n".join(f.read_text(encoding="utf-8") for f in output.rglob("*.md"))
+            lowered = published_text.lower()
+            # Diese Fragmente enthalten kein "Kim" und muessen daher
+            # UNVERAENDERT (nicht korrumpiert) im Output erhalten bleiben --
+            # das ist der eigentliche RUN3-Regressionsbefund: 0.2.2 ersetzte
+            # genau diese generischen Woerter faelschlich durch Fake-Namen.
+            for intact_fragment in (
+                "grob bewegt", "beim umgang", "klettverschlüsse",
+                "landkreises lörrach", "einrichtungsangaben", "die förderung",
+                "begleitung", "handlauf", "zähneputzen",
+            ):
+                self.assertIn(
+                    intact_fragment, lowered,
+                    f"Fragment {intact_fragment!r} fehlt/korrumpiert im Output",
+                )
+            # Der eigentliche Klientenname MUSS dagegen vollstaendig ersetzt sein.
+            self.assertNotIn("kim", lowered)
 
     def test_mixed_case_email_is_replaced_without_lowercasing_the_source(self):
         email = "Alice.Example@Unknown.com"

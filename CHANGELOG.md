@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.2.3 — 2026-07-23
+
+- **Regression zu 0.2.2 (ehrlich dokumentiert):** Referenzlauf RUN3 mit der
+  echten synthetischen Akte zeigte, dass 0.2.2 real SCHLECHTER war als
+  0.2.1 — `prepare` brach über die Residualprüfung ab ("Beispiel"/"Umgang"),
+  und zusätzlich wurden "Umgang", "Begleitung", "Handlauf", "Zähneputzen"
+  fälschlich ersetzt; "Klettverschlüsse"/"Landkreises" blieben ebenfalls
+  betroffen. Ursache: reines POS==PROPN als Akzeptanzkriterium kippt in der
+  Praxis zu durchlässig — spaCy misstaggt Substantive in Aufzählungs-/
+  Fachtext-Kontexten häufig als PROPN, wodurch der 0.2.2-Filter
+  durchlässiger statt strenger wurde.
+- **Anker-Prinzip als struktureller Nachfolger (Operator-Design):**
+  Ersetzungspolitik neu gestaffelt: (i) `real_name`/`weitere_namen` werden
+  weiterhin immer ersetzt (Kernzweck, unverändert). (ii) NER-PER-Mehrwort-
+  Spans (≥2 Tokens nach der PROPN-Kürzung, Vor+Nachname-Muster) gelten als
+  hinreichend verifiziert, deckt auch Namen ohne Lexikon-Eintrag wie "Amara
+  Diallo" ab. (iii) NER-PER-Einzelwort-Spans werden NUR mit Anker ersetzt:
+  bekannter Vorname (Lexikon) ODER unmittelbar vorangehendes Titel-/
+  Anrede-Token (Dr./Prof./Frau/Herr). Ohne Anker: keine destruktive
+  Ersetzung, stattdessen sichtbarer, nicht-destruktiver Review-Kandidat im
+  neuen Scan-Ergebnis-Key `ner_review_only` (`create_profile()` liest
+  diesen Key bewusst nicht). Die 0.2.2-Lemma-Denyliste bleibt als
+  zusätzliche Schicht bestehen. `detect_person_names_ner()` gibt jetzt
+  `(confirmed, review_only)` statt einer flachen Liste zurück.
+- **Residualprüfung "entschärft sich von selbst":** `_residual_originals()`
+  prüfte schon vorher ausschließlich `profile.mappings` (tatsächlich zu
+  ersetzende Werte), nicht alle je gescannten Kandidaten — der RUN3-Abbruch
+  kam davon, dass unter 0.2.2 zu viele generische Fehlalarme überhaupt erst
+  ins Profil-Mapping gelangten. Mit dem Anker-Prinzip gelangen nur noch
+  vertrauenswürdige Namen ins Mapping, wodurch die Residualprüfung ohne
+  eigene Codeänderung wieder korrekt greift.
+- **Pflicht-DoD verifiziert:** `DocumentAnonymizer` End-to-End (scan →
+  create_profile → anonymize_folder) gegen die echte synthetische
+  RUN2-Akte (`ARCHIV_2026-07-23_RUN2/quelle/`) liefert einen vollständig
+  unkorrumpierten Bericht — "Grob bewegt", "beim Umgang", "Klettverschlüsse",
+  "Landkreises Lörrach", "Einrichtungsangaben", "die Förderung", "Begleitung",
+  "Handlauf", "Zähneputzen" bleiben unverändert erhalten; der Klientenname
+  "Kim" ist vollständig und konsistent durch das Pseudonym ersetzt. Neuer
+  Regressionstest `test_ner_run2_real_akte_end_to_end_no_corruption`
+  (skip-guarded, wenn der Referenzordner auf dem Host fehlt).
+
 ## 0.2.2 — 2026-07-23
 
 - **NER-Plausibilitätsfilter strukturell auf POS/Lemma umgestellt**

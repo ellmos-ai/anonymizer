@@ -1,6 +1,6 @@
 # TODO — anonymizer
 
-Stand: 2026-07-23, Version 0.2.2
+Stand: 2026-07-23, Version 0.2.3
 
 ## Status
 
@@ -107,14 +107,41 @@ worksheet-generator + Berichts-Kern)
   Denyliste zusätzlich auf LEMMA-Basis (`_tokens_pass_lemma_denylist`,
   deckt "Landkreises"→"Landkreis" ab); Oberflächenformen-Prüfung bleibt
   Fallback. Regressionstests mit den echten RUN2-Sätzen (skip-guarded auf
-  installiertes `de_core_news_lg`):
-  `test_ner_run2_regression_real_sentences_no_false_names`,
-  `test_ner_run2_regression_positive_names_still_detected`, plus
-  modellfreie Unit-Tests `test_extract_name_token_runs_shrinks_to_propn_subsequence`,
-  `test_tokens_pass_lemma_denylist_catches_inflected_forms`
-  (`tests/test_security_boundaries.py`). Kosten: mehr Pipeline-
-  Komponenten pro Dokument (~3.600 Zeichen in ~0,25 s nach Warmup, keine
-  praktisch relevante Verlangsamung in Tests).
+  installiertes `de_core_news_lg`); Kosten: mehr Pipeline-Komponenten pro
+  Dokument (~3.600 Zeichen in ~0,25 s nach Warmup, keine praktisch
+  relevante Verlangsamung in Tests). **ACHTUNG:** Dieser Fix erwies sich im
+  Referenzlauf RUN3 als real SCHLECHTER als 0.2.1 (POS==PROPN allein zu
+  durchlässig) — siehe direkt folgender Eintrag 0.2.3.
+- [x] 2026-07-23: **RUN3-Regression zu 0.2.2 behoben — Anker-Prinzip
+  (0.2.3, Operator-Design):** RUN3 mit der echten Akte zeigte reale
+  Fehl-Ersetzungen von "Umgang", "Begleitung", "Handlauf", "Zähneputzen"
+  sowie einen Abbruch von `prepare` über die Residualprüfung
+  ("Beispiel"/"Umgang") — Ursache: spaCy misstaggt Substantive in
+  Aufzählungs-/Fachtext-Kontexten häufig als PROPN, wodurch reines
+  POS==PROPN als Kriterium durchlässiger statt strenger wurde.
+  Ersetzungspolitik neu gestaffelt: `real_name`/`weitere_namen` immer
+  ersetzt (unverändert); NER-PER-Mehrwort-Spans (≥2 Tokens) gelten als
+  verifiziert; NER-PER-Einzelwort-Spans nur mit Anker (Lexikon-Vorname
+  ODER vorangehendes Titel-/Anrede-Token Dr./Prof./Frau/Herr) — sonst
+  landet der Treffer unzerstört im neuen Scan-Key `ner_review_only`
+  (sichtbar, nicht im Ersetzungs-Mapping). `detect_person_names_ner()`
+  gibt jetzt `(confirmed, review_only)` zurück. Residualprüfung
+  entschärft sich dadurch von selbst (`_residual_originals()` prüfte
+  schon vorher nur `profile.mappings`, jetzt gelangen dort einfach
+  weniger Fehlalarme hinein). **Pflicht-DoD verifiziert:** volle
+  pytest-Suite mit geladenem `de_core_news_lg` — 63 passed, 2 skipped
+  (beide Windows-Symlink-OS-Limitationen, KEIN Modell-Test übersprungen),
+  12 subtests; End-to-End-Realcheck `DocumentAnonymizer` gegen die echte
+  RUN2-Akte (`ARCHIV_2026-07-23_RUN2/quelle/`) liefert unkorrumpierten
+  Bericht — "Grob bewegt", "beim Umgang", "Klettverschlüsse",
+  "Landkreises Lörrach", "Einrichtungsangaben", "die Förderung",
+  "Begleitung", "Handlauf", "Zähneputzen" bleiben unverändert, "Kim" ist
+  vollständig durch das Pseudonym ersetzt. Neue Tests:
+  `test_run_has_anchor_single_word_needs_lexicon_or_title`,
+  `test_ner_run2_regression_no_failure_class_tokens_confirmed_or_review`,
+  `test_ner_run2_regression_positive_names_still_detected`,
+  `test_ner_run2_real_akte_end_to_end_no_corruption` (skip-guarded, wenn
+  der Referenzordner auf dem Host fehlt) (`tests/test_security_boundaries.py`).
 - [x] 2026-07-16: Vollständiger Privacy-/Security-Review des 0.1.0-Snapshots;
   fail-closed Ordnerveröffentlichung, Pfad-/Symlink-/Cloud-Grenzen,
   transaktionale Einzeldatei-Verarbeitung, sichere Schlüsseldateien,

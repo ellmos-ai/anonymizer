@@ -1,6 +1,6 @@
 # anonymizer — Standalone-Modul
 
-`anonymizer` 0.2.2 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
+`anonymizer` 0.2.3 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
 Das Modul verarbeitet sensible personenbezogene Daten ausschließlich lokal;
 Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
 „Rechtlicher Rahmen und Verantwortung" weiter unten.
@@ -24,16 +24,26 @@ Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
 - Die NER-Personennamenerkennung validiert erkannte PER-Spans strukturell
   über die Wortart (POS): Großschreibung ist im Deutschen **kein**
   Personen-Signal (jedes Substantiv wird großgeschrieben), daher zählen nur
-  als Eigenname (PROPN) getaggte Tokens als Namensbestandteil — mit
-  begrenzten Rettungsankern für Titel („Dr.", „Prof.") und bekannte
-  Vornamen bei POS-Fehltagging. Ein zu weit gefasster NER-Span wird auf
-  seine maximale zusammenhängende Namens-Teilsequenz gekürzt statt ganz
-  verworfen (z. B. „Kim" aus „Grob bewegt Kim sich"), zusätzlich abgesichert
-  durch eine Gattungsbegriff-Denyliste (Verwaltungs-, Rollen- und
-  Berichtsvokabular wie „Landkreis", „Förderung") auf Lemma- **und**
-  Oberflächenform-Basis (deckt auch Flexionsformen wie „Landkreises" ab)
-  sowie Wort-/Satzfragment-Muster — reduziert NER-Fehlalarme, ohne die
-  fail-closed-Grundregel zu lockern.
+  als Eigenname (PROPN) getaggte Tokens als Namensbestandteil. Ein zu weit
+  gefasster NER-Span wird auf seine maximale zusammenhängende
+  Namens-Teilsequenz gekürzt statt ganz verworfen (z. B. „Kim" aus „Grob
+  bewegt Kim sich"), zusätzlich abgesichert durch eine Gattungsbegriff-
+  Denyliste (Verwaltungs-, Rollen- und Berichtsvokabular wie „Landkreis",
+  „Förderung") auf Lemma- **und** Oberflächenform-Basis (deckt auch
+  Flexionsformen wie „Landkreises" ab).
+- **Anker-Prinzip (0.2.3):** Reines POS==PROPN erwies sich in der Praxis
+  als zu durchlässig (spaCy misstaggt Substantive in Aufzählungs-/
+  Fachtext-Kontexten häufig als PROPN). Mehrwort-NER-Treffer (≥2 Tokens
+  nach der Kürzung, Vor+Nachname-Muster wie „Amara Diallo") gelten als
+  hinreichend verifiziert. Einzelwort-Treffer werden nur ersetzt, wenn ein
+  Anker vorliegt: ein bekannter deutscher Vorname (Lexikon) ODER ein
+  unmittelbar vorangehendes Titel-/Anrede-Token („Dr.", „Prof.", „Frau",
+  „Herr"). Ohne Anker erfolgt **keine** destruktive Ersetzung — der Treffer
+  landet stattdessen sichtbar im Scan-Ergebnis (`ner_review_only`) zur
+  manuellen Prüfung. Der eigentliche Klientenname kommt unabhängig davon
+  immer über `real_name`/`weitere_namen` ins Profil (Kernzweck,
+  unverändert) — das Anker-Prinzip betrifft nur automatisch erkannte
+  Drittpersonen.
 - `word/media`/`xl/media`-Einträge (eingebettete Bilder) in DOCX/XLSX
   blockieren standardmäßig die Veröffentlichung (keine OCR-Garantie). Ein
   optionales, vertrauenswürdiges Template (`trusted_template_path`/CLI

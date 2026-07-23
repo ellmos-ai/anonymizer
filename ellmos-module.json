@@ -1,0 +1,87 @@
+{
+  "$schema": "ellmos-module-v1",
+  "name": "anonymizer",
+  "display_name": "Anonymizer",
+  "version": "0.2.0",
+  "kind": "standalone-module",
+  "visibility": "private",
+  "description": "PRIVAT: Fail-closed Pseudonymisierung personenbezogener Dokumente (Text, DOCX, PDF, XLSX) mit lokaler authentifiziert verschlüsselter Schlüsselspeicherung.",
+
+  "origin": {
+    "source": "BACH hub/_services/document/anonymizer_service.py v1.2.0",
+    "extracted": "2026-06-27",
+    "neutralization": "BACH-Pfadbezüge entfernt (bach_paths, BACH/keys, BACH-Whitelist-Pfad); ENV-Override-Mechanismus eingeführt (ANONYMIZER_HOME, ANONYMIZER_KEYS_DIR)"
+  },
+
+  "authors": ["ellmos", "BACH Contributors"],
+  "license": "MIT",
+  "privacy": {
+    "level": "private",
+    "client_data": true,
+    "note": "Klientenbezogene Daten — nicht veröffentlichen; keys/ und *.enc aus VCS ausgeschlossen"
+  },
+
+  "capabilities": [
+    "anonymize-text",
+    "anonymize-docx",
+    "anonymize-pdf",
+    "anonymize-excel",
+    "anonymize-filename",
+    "deanonymize",
+    "authenticated-key-storage",
+    "tarnname-generator",
+    "gender-detection",
+    "sensitive-data-scanner"
+  ],
+
+  "required_dependencies": {
+    "cryptography": "Fernet-authentifizierte Schlüsselverschlüsselung mit PBKDF2-HMAC-SHA256"
+  },
+
+  "optional_dependencies": {
+    "python-docx": "Word-Dokument-Anonymisierung",
+    "PyMuPDF": "PDF-Schwärzung",
+    "pikepdf": "PDF-AES-256-Verschlüsselung",
+    "openpyxl": "Excel-Anonymisierung"
+  },
+
+  "entrypoints": {
+    "main": "anonymizer_modul.core",
+    "cli": "anonymizer_modul.core:main",
+    "class_anonymizer": "anonymizer_modul.core.DocumentAnonymizer",
+    "class_deanonymizer": "anonymizer_modul.core.DocumentDeanonymizer"
+  },
+
+  "storage": {
+    "keys": {
+      "env": "ANONYMIZER_KEYS_DIR",
+      "default_windows": "%LOCALAPPDATA%\\anonymizer\\keys",
+      "default_unix": "~/.local/share/anonymizer/keys",
+      "note": "Schlüssel (.schluessel.enc) dürfen NICHT in OneDrive sein"
+    },
+    "output": {
+      "env": "ANONYMIZER_HOME",
+      "default": "~/.anonymizer",
+      "note": "Anonymisierte Klienten-Ausgabe"
+    },
+    "whitelist": {
+      "path": "${ANONYMIZER_HOME}/anonymizer_whitelist.json",
+      "required": false
+    }
+  },
+
+  "boundaries": {
+    "no_bach_imports": true,
+    "no_cloud_sync_for_keys": true,
+    "synthetic_test_identities_only": true,
+    "fail_closed_publication": true,
+    "standalone": true
+  },
+
+  "wiring": {
+    "compatible_with": ["foerderplaner"],
+    "wiring_doc": "WIRING.md"
+  },
+
+  "tags": ["anonymisierung", "datenschutz", "pseudonymisierung", "klienten", "foerderplanung", "privat"]
+}

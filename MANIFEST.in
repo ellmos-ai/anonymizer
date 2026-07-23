@@ -1,0 +1,15 @@
+include README.md
+include LICENSE
+include SECURITY.md
+include CHANGELOG.md
+include RELEASE_GATE.md
+include SECURITY_REVIEW_2026-07-16.md
+include WIRING.md
+include ellmos-module.json
+include ellmos-module.v2.json
+include SKILL.md
+exclude LOCK*.txt
+global-exclude *.bak *.bak_* *.py[cod]
+prune .pytest_cache
+prune __pycache__
+prune tests/__pycache__

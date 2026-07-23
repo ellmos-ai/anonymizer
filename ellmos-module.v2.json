@@ -1,0 +1,46 @@
+{
+  "schema": "ellmos.module.v2",
+  "id": "anonymizer",
+  "display_name": "Anonymizer",
+  "version": "0.2.0",
+  "description": "Private fail-closed pseudonymization service for sensitive local documents.",
+  "package": "anonymizer-modul",
+  "entrypoints": {
+    "library": "anonymizer_modul",
+    "cli": "anonymizer_modul.core:main"
+  },
+  "category": "domains",
+  "kind": "service",
+  "status": "development",
+  "visibility": "private",
+  "provides": [
+    "privacy.anonymize",
+    "privacy.pseudonymize"
+  ],
+  "requires": [],
+  "optional": [],
+  "conflicts": [],
+  "surfaces": [
+    "library",
+    "cli"
+  ],
+  "state": {
+    "ownership": "module",
+    "location": "user-home"
+  },
+  "boundaries": {
+    "network": "none",
+    "data": "sensitive",
+    "platforms": [
+      "windows",
+      "macos",
+      "linux"
+    ]
+  },
+  "source_of_truth": {
+    "type": "local-directory",
+    "path": ".",
+    "repository": null
+  },
+  "adapters": []
+}

@@ -1,0 +1,53 @@
+# Schlüssel und sensible Daten — NIEMALS committen
+keys/
+*.schluessel.enc
+*.enc
+*.key
+
+# Klienten-Datenbank und Ausgaben
+*.db
+*.db-shm
+*.db-wal
+.anonymizer/
+klienten/
+_ausgabe/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtuelle Umgebungen (nie in OneDrive)
+.venv/
+venv/
+env/
+
+# Profil-Metadaten (klientenbezogen)
+.profil.json
+*.profil.json
+
+# IDE und System
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Testausgaben
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Lokale Sicherungen und Laufzeit-Locks nicht paketieren/committen
+*.bak
+*.bak_*
+LOCK*.txt
+PRIVATE.txt
+_intern/

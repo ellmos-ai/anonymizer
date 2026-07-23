@@ -36,10 +36,11 @@ Optionale Abhängigkeiten (pip install ...):
   pikepdf        — PDF-AES-256-Verschlüsselung
   openpyxl       — Excel-Anonymisierung
 
-Version: 0.2.4 (Mehrwort-Span-Härtung gegen Gattungsbegriffe/
-substantivierte Verben 2026-07-23; Basis: 0.2.3 Anker-Prinzip, 0.2.2
-POS/Lemma-Span-Validierung, 0.2.1 defusedxml-Härtung, 0.2.0 Sicherheits-
-und Datenschutz-Härtung 2026-07-16)
+Version: 0.2.5 (modellversions-robuste Oberflächen-Härtung gegen
+Fehltagging bei zusätzlich installiertem en_core_web_lg 2026-07-23; Basis:
+0.2.4 Mehrwort-Span-Härtung, 0.2.3 Anker-Prinzip, 0.2.2 POS/Lemma-Span-
+Validierung, 0.2.1 defusedxml-Härtung, 0.2.0 Sicherheits- und
+Datenschutz-Härtung 2026-07-16)
 Copyright (c) 2026 ellmos / BACH Contributors — MIT License
 """
 
@@ -864,6 +865,9 @@ _NER_GENERIC_ROLE_NOUNS = {
     "mutter", "vater", "eltern", "bruder", "schwester", "geschwister",
     "therapeut", "therapeutin", "betreuer", "betreuerin",
     "lehrer", "lehrerin", "mitarbeiter", "mitarbeiterin",
+    "frühförderin", "fruehfoerderin", "frühförderer", "fruehfoerderer",
+    "erzieher", "erzieherin", "bezugserzieher", "bezugserzieherin",
+    "sachbearbeiter", "sachbearbeiterin",
 }
 
 # Verwaltungs-/Einrichtungs- und Berichts-Gattungsbegriffe -- reales
@@ -1026,6 +1030,141 @@ def _run_has_anchor(tokens: list, preceding_token=None) -> bool:
         if preceding_clean in _NER_ANCHOR_TITLE_TOKENS:
             return True
     return False
+
+
+# Praeposition-Artikel-Kontraktionen -- grammatikalisch nie Namensbestandteil,
+# case-sensitiv (nur in dieser Grossschreibung, wie sie am Anfang eines
+# faelschlich zu weit gefassten Spans auftreten). Oberflaechen-Exaktvergleich,
+# unabhaengig von POS/Lemma.
+_NER_CONTRACTION_TOKENS = {
+    "Beim", "Zum", "Zur", "Am", "Im", "Ins", "Vom", "Übers", "Unterm",
+}
+
+# Mindestlaenge fuer den is_oov-basierten "generisches Alltagswort"-Check
+# (0.2.5c) -- verhindert Kollisionen mit kurzen, aber echten Vornamen wie
+# "Kim" (3 Zeichen, im DE-Vokabular empirisch NICHT out-of-vocabulary,
+# waere ohne dieses Mindestmass faelschlich als generisches Wort gekuerzt
+# worden). Alle bisher beobachteten Fehlklassen-Woerter ("Notiz", "Kurze",
+# "Anziehen", "Essen") sind >=5 Zeichen lang.
+_NER_COMMON_WORD_MIN_LENGTH = 5
+
+
+def _matches_generic_denylist_surface(word_lower: str) -> bool:
+    """
+    Oberflaechen-Praefixmatch gegen die Gattungsbegriff-Denyliste (0.2.5b,
+    modellversions-robust): kein Lemma noetig, deckt kurze deutsche
+    Flexionsendungen ab (Genitiv -es/-s, Plural -e/-en/-n), z.B.
+    "Landkreises"/"Landkreisen" -> Stamm "landkreis". Die Endungs-Toleranz
+    ist auf 3 Zeichen begrenzt, um zufaellige Praefix-Kollisionen mit
+    laengeren, unverwandten Woertern zu vermeiden.
+    """
+    for stem in _NER_GENERIC_ROLE_NOUNS | _NER_GENERIC_REPORT_NOUNS:
+        if word_lower == stem:
+            return True
+        if word_lower.startswith(stem) and len(word_lower) - len(stem) <= 3:
+            return True
+    return False
+
+
+def _is_common_german_word(word_lower: str) -> bool:
+    """
+    spaCy vocab/is_oov-Check auf die kleingeschriebene Wortform (0.2.5c,
+    modellversions-robust): existiert das Wort auch kleingeschrieben im
+    Standard-Wortschatz, ist es wahrscheinlich ein normales Substantiv/
+    Adjektiv statt eines Eigennamens ("Notiz", "Kurze").
+
+    Bewusst IMMER gegen das DEUTSCHE Modell geprueft (nicht gegen das
+    Vokabular des Modells, das den fehlerhaften Tag erzeugt hat) -- der
+    RUN5-Befund zeigt, dass gerade das englische en_core_web_lg-Modell,
+    wenn zusaetzlich installiert, deutsche Fliesstext-Woerter POS/Lemma-
+    seitig unzuverlaessig taggt (z.B. "Notiz" bleibt dort out-of-
+    vocabulary, waehrend das deutsche Modell es korrekt kennt) -- die
+    deutsche Vokabularpruefung ist die verlaessliche Instanz fuer "ist
+    das ein normales deutsches Wort", unabhaengig davon, welches Modell
+    die Entitaet markiert hat.
+
+    is_oov ist ein Vektor-Vorhanden-Signal, kein perfekter Name/Wort-
+    Diskriminator -- daher der Mindestlaengen-Filter
+    (_NER_COMMON_WORD_MIN_LENGTH) als Sicherheitsnetz gegen kurze, aber
+    echte Namen mit zufaelligem Vektor (empirisch: "kim" ist im
+    DE-Vokabular NICHT out-of-vocabulary).
+    """
+    if len(word_lower) < _NER_COMMON_WORD_MIN_LENGTH:
+        return False
+    de_nlp = _get_spacy_model("de_core_news_lg")
+    if de_nlp is None:
+        return False
+    try:
+        return not de_nlp.vocab[word_lower].is_oov
+    except Exception:
+        return False
+
+
+def _harden_run_surface(tokens: list, preceding_token=None) -> List[Tuple[list, object]]:
+    """
+    Modellversions-robuste Oberflaechen-Haertung (0.2.5, RUN5-Nachbefund):
+    ergaenzt die POS-/Lemma-basierte Kuerzung (0.2.2-0.2.4) um Regeln, die
+    NICHT von POS/Lemma-Tags abhaengen -- diese variieren nachweislich
+    zwischen Umgebungen. Empirisch belegt: ist zusaetzlich das englische
+    en_core_web_lg-Modell installiert, taggt es deutschen Fliesstext
+    (Praepositionen, substantivierte Verben, Gattungsbegriffe) teils
+    selbst als PROPN mit unveraendert grossgeschriebenem Lemma -- die
+    0.2.2-0.2.4-Verteidigung (POS==PROPN + Lemma-Kleinschreibung) greift
+    dagegen nicht, weil sie auf deutsche Lemmatisierungsregeln zugeschnitten
+    ist. Diese Haertung arbeitet stattdessen auf der Oberflaechenform:
+
+    (a) Praeposition-Artikel-Kontraktionen ("Beim", "Zum", ...) werden IMMER
+        gekuerzt (Oberflaechen-Exaktvergleich, case-sensitiv).
+    (b) Gattungsbegriff-Denyliste zusaetzlich per Oberflaechen-Praefixmatch
+        (deckt Flexionsformen wie "Landkreises" ohne Lemma ab).
+    (c) Ein Token, das eine NEUE Teilsequenz eroeffnen wuerde (noch nichts
+        akkumuliert) UND dessen Kleinschreibform ein bekanntes deutsches
+        Wort ist (spaCy is_oov=False, Mindestlaenge 5) UND das selbst kein
+        bekannter Vorname/Titel ist, gilt als generisches Substantiv/
+        Adjektiv ("Kurze Notiz") und wird gekuerzt. Tokens, die eine
+        BEREITS begonnene Teilsequenz fortsetzen (z.B. "Muster" nach
+        "Anna", "Bergmann" nach "Anna Muster-"), sind davon ausgenommen --
+        das Vorname+Nachname-Muster bleibt intakt, auch wenn der Nachname
+        zufaellig ein deutsches Alltagswort ist (z.B. "Muster", "Bergmann").
+
+    Gibt die (ggf. weiter zerlegten) Teilsequenzen als (tokens, preceding)
+    Paare zurueck, analog zu _extract_name_token_runs.
+    """
+    runs: List[Tuple[list, object]] = []
+    current: list = []
+    current_preceding = preceding_token
+    for token in tokens:
+        text = token.text
+        if text in ("-", "‐", "–", "—"):
+            drop = False
+        elif text in _NER_CONTRACTION_TOKENS:
+            drop = True
+        else:
+            cleaned = text.strip(".,;:!?()[]{}\"'-")
+            lower = cleaned.lower() if cleaned else ""
+            if not lower:
+                drop = True
+            elif _matches_generic_denylist_surface(lower):
+                drop = True
+            elif (
+                not current
+                and lower not in _NER_KNOWN_FIRST_NAMES
+                and lower not in _NER_TITLE_TOKENS
+                and _is_common_german_word(lower)
+            ):
+                drop = True
+            else:
+                drop = False
+        if drop:
+            if current:
+                runs.append((current, current_preceding))
+            current = []
+            current_preceding = token
+        else:
+            current.append(token)
+    if current:
+        runs.append((current, current_preceding))
+    return runs
 
 
 def _tokens_to_name_text(tokens: list) -> str:
@@ -1193,29 +1332,34 @@ def detect_person_names_ner(
                 # (VERB/ADV/ADP/DET/PRON/NOUN/...) reissen NICHT mehr den
                 # gesamten Span mit ("Kim" aus "Grob bewegt Kim sich").
                 doc_preceding_token = doc[ent.start - 1] if getattr(ent, "start", 0) > 0 else None
-                for tokens, preceding_token in _extract_name_token_runs(ent, doc_preceding_token):
-                    name = _tokens_to_name_text(tokens)
-                    if not name or any(ch.isdigit() for ch in name):
-                        continue
-                    if name.lower() in wl_lower:
-                        continue
-                    if not _looks_like_person_name(name):
-                        continue
-                    if not _tokens_pass_lemma_denylist(tokens):
-                        continue
-                    # Wortgrenzen-Check: folgt direkt (ohne Trennzeichen) ein
-                    # Kleinbuchstabe, ist die Entitaet nur der ANFANG eines
-                    # zusammengesetzten deutschen Wortes (z.B. NER erkennt
-                    # "Wahrnehmung" als Namensbeginn von "Wahrnehmungsbesonder-
-                    # heiten") -- Ersetzung wuerde ein Wortfragment hinterlassen.
-                    end_char = _tokens_end_char(tokens)
-                    next_char = chunk[end_char:end_char + 1]
-                    if next_char and next_char.isalpha() and next_char.islower():
-                        continue
-                    if _run_has_anchor(tokens, preceding_token):
-                        chunk_confirmed.add(name)
-                    else:
-                        chunk_review.add(name)
+                for pos_tokens, pos_preceding in _extract_name_token_runs(ent, doc_preceding_token):
+                    # Modellversions-robuste Oberflaechen-Haertung (0.2.5):
+                    # zusaetzlich zur POS-/Lemma-Kuerzung, BEVOR die Mehrwort-/
+                    # Anker-Logik greift -- faengt Faelle ab, in denen POS/Lemma
+                    # (je nach installiertem Modell) unzuverlaessig sind.
+                    for tokens, preceding_token in _harden_run_surface(pos_tokens, pos_preceding):
+                        name = _tokens_to_name_text(tokens)
+                        if not name or any(ch.isdigit() for ch in name):
+                            continue
+                        if name.lower() in wl_lower:
+                            continue
+                        if not _looks_like_person_name(name):
+                            continue
+                        if not _tokens_pass_lemma_denylist(tokens):
+                            continue
+                        # Wortgrenzen-Check: folgt direkt (ohne Trennzeichen) ein
+                        # Kleinbuchstabe, ist die Entitaet nur der ANFANG eines
+                        # zusammengesetzten deutschen Wortes (z.B. NER erkennt
+                        # "Wahrnehmung" als Namensbeginn von "Wahrnehmungsbesonder-
+                        # heiten") -- Ersetzung wuerde ein Wortfragment hinterlassen.
+                        end_char = _tokens_end_char(tokens)
+                        next_char = chunk[end_char:end_char + 1]
+                        if next_char and next_char.isalpha() and next_char.islower():
+                            continue
+                        if _run_has_anchor(tokens, preceding_token):
+                            chunk_confirmed.add(name)
+                        else:
+                            chunk_review.add(name)
 
             if len(chunk_confirmed) > _NER_MAX_NAMES_PER_CHUNK:
                 if fail_on_ambiguous:
@@ -2717,7 +2861,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     import argparse
     import getpass
 
-    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.4")
+    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.5")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("self-test", aliases=["test"], help="lokalen Selbsttest ausführen")
 

@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.2.5 — 2026-07-23
+
+- **Root Cause identifiziert (Referenzlauf RUN5, w6-Umgebungsvergleich):**
+  Der 0.2.4-Fix wurde in einer anderen Umgebung (System-Python) reproduzierbar
+  widerlegt — "Beim Anziehen"/"Beim Essen"/"Landkreises Lörrach" sowie neu
+  "Kurze Notiz" wurden dort weiterhin ersetzt. Diagnose ergab: **keine**
+  spaCy-/Modellversions-Drift (identische Versionen spacy==3.8.14,
+  de_core_news_lg==3.8.0 in beiden Umgebungen, per `spacy.load(...).meta`
+  verifiziert) — sondern ob zusätzlich **`en_core_web_lg` installiert ist**.
+  War es das (System-Python, nicht in der eigenen venv), taggte das
+  englische Modell deutschen Fließtext eigenständig fehlerhaft als
+  `PERSON`/`PROPN` (z. B. "Beim"/"Anziehen"/"Notiz" alle PROPN, Lemma
+  unverändert großgeschrieben) — die 0.2.2–0.2.4-Verteidigung (POS==PROPN +
+  Lemma-Kleinschreibung) ist auf deutsche Lemmatisierungsregeln zugeschnitten
+  und greift gegen dieses Muster nicht.
+- **Modellversions-robuste Oberflächen-Härtung (Operator-Design):** Neue
+  Regeln, die NICHT von POS/Lemma abhängen, laufen VOR der Mehrwort-/
+  Anker-Entscheidung: (a) Präposition-Artikel-Kontraktionen ("Beim", "Zum",
+  "Zur", "Am", "Im", "Ins", "Vom", "Übers", "Unterm") werden per
+  Oberflächen-Exaktvergleich immer verworfen. (b) Gattungsbegriff-Denyliste
+  zusätzlich per Oberflächen-Präfixmatch (Genitiv/Plural-Endungen, kein
+  Lemma nötig). (c) Ein Token, das eine NEUE Teilsequenz eröffnen würde und
+  dessen Kleinschreibform ein bekanntes deutsches Wort ist (`is_oov=False`,
+  **immer gegen das DE-Vokabular geprüft**, unabhängig davon welches Modell
+  den Tag erzeugt hat) und kein bekannter Vorname/Titel ist, gilt als
+  generisches Wort ("Kurze Notiz") und wird verworfen — Tokens, die eine
+  bereits akzeptierte Teilsequenz fortsetzen (Vorname+Nachname-Muster wie
+  "Anna Muster"/"Anna Muster-Bergmann"), bleiben ausgenommen.
+- **Sicherheitsnetz gegen Kollisionen:** `is_oov` unterscheidet nicht
+  zuverlässig "generisches Wort" von "Name mit Vektor" — empirisch waren
+  sowohl "kim" als auch "beispiel" im DE-Vokabular NICHT out-of-vocabulary.
+  Mindestlänge 5 Zeichen für den Alltagswort-Check schützt kurze echte Namen
+  ("Kim"); die "neue Teilsequenz"-Beschränkung schützt Nachnamen, die
+  zufällig Alltagswörter sind ("Muster", "Bergmann"), solange sie einem
+  bereits akzeptierten Vornamen folgen.
+- **Denyliste erweitert:** "frühförderin"/"frühförderer"/"erzieher(in)"/
+  "bezugserzieher(in)"/"sachbearbeiter(in)" ergänzt (eigener Fund beim
+  End-to-End-Test: "Frühförderin Frau" wurde vom englischen Modell als
+  2-Wort-PERSON-Span fehlgetaggt und über die Mehrwort-Regel bestätigt).
+- **DoD in BEIDEN Umgebungen verifiziert:** eigene venv (nur `de_core_news_lg`)
+  und System-Python (zusätzlich `en_core_web_lg`, reproduziert RUN5). Beide
+  grün: venv 70 passed/3 skipped, System-Python 71 passed/2 skipped (jeweils
+  nur die 2 Windows-Symlink-OS-Limitationen, kein Modell-Test übersprungen).
+  End-to-End gegen die echte RUN2-Akte in BEIDEN Umgebungen: Profil-Mapping
+  korrekt, "Beim Anziehen"/"Beim Essen"/"Landkreises Lörrach"/"Kurze Notiz"
+  wörtlich unverändert im Output, Klientenname vollständig ersetzt.
+- **README-Abschnitt "Modellversions-Sensitivität"** ergänzt: empfohlene/
+  getestete Version (`de_core_news_lg==3.8.0`, `spacy==3.8.14`), Hinweis zum
+  `en_core_web_lg`-Risiko, Versions-Pin als Kommentar in `pyproject.toml`.
+
 ## 0.2.4 — 2026-07-23
 
 - **Mehrwort-Span-Härtung (Referenzlauf RUN4, Feinschliff zu 0.2.3):** Das

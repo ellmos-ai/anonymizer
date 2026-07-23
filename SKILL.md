@@ -1,6 +1,6 @@
 ---
 name: anonymizer
-version: "0.2.4"
+version: "0.2.5"
 type: standalone-module
 standalone: true
 visibility: private
@@ -79,6 +79,7 @@ os.environ["ANONYMIZER_HOME"] = r"C:\_Local_Anon\output"
 
 | Version | Datum | Änderung |
 |---|---|---|
+| 0.2.5 | 2026-07-23 | Modellversions-robuste Oberflächen-Härtung (RUN5: englisches Modell taggt Deutsch fehlerhaft) |
 | 0.2.4 | 2026-07-23 | Mehrwort-Span-Härtung: Gattungsbegriffe/substantivierte Verben auch bei PROPN-Fehltagging gekürzt (RUN4) |
 | 0.2.3 | 2026-07-23 | Anker-Prinzip gegen NER-Overblocking (RUN3-Regression zu 0.2.2 behoben) |
 | 0.2.2 | 2026-07-23 | NER-Plausibilitätsfilter strukturell auf POS/Lemma umgestellt (Referenzlauf RUN2) |

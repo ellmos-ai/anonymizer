@@ -1,6 +1,6 @@
 # TODO — anonymizer
 
-Stand: 2026-07-23, Version 0.2.4
+Stand: 2026-07-23, Version 0.2.5
 
 ## Status
 
@@ -75,6 +75,43 @@ worksheet-generator + Berichts-Kern)
 
 ## Erledigt
 
+- [x] 2026-07-23: **RUN5 — Root Cause gefunden, modellversions-robuster Fix
+  (0.2.5):** Ein anderer Worker (w6) widerlegte 0.2.4 reproduzierbar in
+  einer anderen Umgebung (System-Python statt eigener venv) — "Beim
+  Anziehen"/"Beim Essen"/"Landkreises Lörrach" + neu "Kurze Notiz" wurden
+  dort weiter ersetzt. Diagnose (Python-/spaCy-/Modellversionen per
+  `spacy.load(...).meta` in beiden Umgebungen verglichen): KEINE
+  Versions-Drift (identisch: spacy 3.8.14, de_core_news_lg 3.8.0) —
+  Ursache war, ob zusätzlich `en_core_web_lg` installiert ist. Wenn ja,
+  taggt es deutschen Fließtext eigenständig fehlerhaft als PERSON/PROPN
+  mit unzuverlässigem Lemma — die POS-/Lemma-Verteidigung (0.2.2-0.2.4)
+  ist auf deutsche Regeln zugeschnitten und greift dagegen nicht. Neue,
+  modellversions-robuste Oberflächen-Härtung VOR der Mehrwort-/Anker-
+  Entscheidung: (a) Präposition-Artikel-Kontraktionen ("Beim"/"Zum"/...)
+  per Exaktvergleich verworfen; (b) Gattungsbegriff-Denyliste zusätzlich
+  per Oberflächen-Präfixmatch (kein Lemma nötig); (c) neue Teilsequenzen
+  mit bekanntem deutschem Alltagswort (is_oov=False gegen das DE-Vokabular,
+  Mindestlänge 5) und ohne Vornamen-/Titel-Status verworfen — Fortsetzungen
+  einer bereits akzeptierten Sequenz (Vorname+Nachname) ausgenommen.
+  Sicherheitsnetz gegen Kollisionen ("kim"/"beispiel" sind selbst NICHT
+  out-of-vocabulary) über Mindestlänge + Fortsetzungs-Ausnahme empirisch
+  verifiziert. Denyliste um "frühförderin"/"erzieher(in)"/
+  "sachbearbeiter(in)" erweitert (eigener Fund: "Frühförderin Frau" wurde
+  vom EN-Modell als 2-Wort-Span bestätigt). DoD in BEIDEN Umgebungen
+  verifiziert (venv: 70 passed/3 skipped; System-Python mit installiertem
+  en_core_web_lg: 71 passed/2 skipped, beide Male nur die 2
+  Windows-Symlink-Skips). End-to-End gegen die echte RUN2-Akte in beiden
+  Umgebungen: alle 4 Fehlklassen-Phrasen wörtlich unverändert im Output,
+  Klientenname vollständig ersetzt. README-Abschnitt
+  "Modellversions-Sensitivität" + Versions-Pin-Kommentar in
+  `pyproject.toml` ergänzt. Neue Tests:
+  `test_harden_run_surface_drops_contraction_regardless_of_pos`,
+  `test_harden_run_surface_drops_generic_stem_by_surface_prefix`,
+  `test_harden_run_surface_drops_common_german_word_at_run_start`,
+  `test_harden_run_surface_keeps_common_word_surname_after_first_name`,
+  `test_harden_run_surface_short_name_survives_common_word_check`,
+  `test_ner_run5_english_model_cross_contamination_hardened` (skip-guarded
+  auf installiertes `en_core_web_lg`) (`tests/test_security_boundaries.py`).
 - [x] 2026-07-23: **RUN4-Feinschliff — Mehrwort-Span-Härtung (0.2.4):** Das
   0.2.3-Anker-Prinzip griff für Einzelwort-Spans, aber Mehrwort-Spans
   umgingen es: "Beim Anziehen"/"Beim Essen" (substantivierte Verben) und

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anonymizer-modul"
-version = "0.2.4"
+version = "0.2.5"
 description = "Fail-closed Standalone-Anonymizer für personenbezogene Dokumente"
 readme = "README.md"
 license = "MIT"
@@ -23,6 +23,12 @@ excel = ["openpyxl>=3.1"]
 # die keine explizit uebergebenen Namen sind (z.B. andere Kinder in Gruppen-
 # protokollen). Modelle separat laden: `python -m spacy download de_core_news_lg`
 # und `python -m spacy download en_core_web_lg`.
+# Getestete/empfohlene Version (siehe README "Modellversions-Sensitivitaet"):
+#   spacy==3.8.14, de_core_news_lg==3.8.0
+# en_core_web_lg NUR installieren, wenn tatsaechlich Englisch anonymisiert
+# wird -- ist es zusaetzlich vorhanden, kann es deutschen Flie(ss)text
+# eigenstaendig fehlerhaft als PERSON taggen (0.2.5-Oberflaechen-Haertung
+# faengt das ab, aber reines Deutsch braucht das Modell gar nicht).
 ner   = ["spacy>=3.7"]
 all   = [
     "python-docx>=1.0",

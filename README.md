@@ -1,6 +1,6 @@
 # anonymizer — Standalone-Modul
 
-`anonymizer` 0.2.4 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
+`anonymizer` 0.2.5 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
 Das Modul verarbeitet sensible personenbezogene Daten ausschließlich lokal;
 Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
 „Rechtlicher Rahmen und Verantwortung" weiter unten.
@@ -44,6 +44,13 @@ Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
   immer über `real_name`/`weitere_namen` ins Profil (Kernzweck,
   unverändert) — das Anker-Prinzip betrifft nur automatisch erkannte
   Drittpersonen.
+- **Modellversions-robuste Oberflächen-Härtung (0.2.5):** Ergänzend zur
+  POS-/Lemma-Prüfung wird jeder Span-Kandidat zusätzlich rein
+  oberflächenbasiert gehärtet (Präposition-Artikel-Kontraktionen wie
+  „Beim"/„Zum" werden immer verworfen; Gattungsbegriffe zusätzlich per
+  Präfixmatch statt Lemma; ein Alltagswort-Check gegen das deutsche
+  Vokabular für Wörter, die eine neue Teilsequenz eröffnen würden). Details
+  und Hintergrund siehe „Modellversions-Sensitivität" unten.
 - `word/media`/`xl/media`-Einträge (eingebettete Bilder) in DOCX/XLSX
   blockieren standardmäßig die Veröffentlichung (keine OCR-Garantie). Ein
   optionales, vertrauenswürdiges Template (`trusted_template_path`/CLI
@@ -51,6 +58,38 @@ Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
   Medien, deren SHA-256-Hash byte-identisch aus diesem Template stammt —
   jeder andere oder abweichende Medien-Eintrag blockiert weiterhin. Siehe
   „Unterstützte Formate" für Details.
+
+## Modellversions-Sensitivität
+
+Die Qualität der automatischen Personennamenerkennung hängt vom installierten
+spaCy-Modell ab — getestet und empfohlen ist `de_core_news_lg` **3.8.0**
+(spaCy **3.8.14**). Ältere/neuere Modellversionen können abweichende
+POS-Tags/Lemmata liefern und damit die Trefferquote verändern.
+
+**Wichtiger Betriebshinweis (RUN5-Befund, 2026-07-23):** Ist zusätzlich das
+englische `en_core_web_lg`-Modell installiert (`NER_MODELS` verarbeitet
+standardmäßig DE **und** EN), kann es deutschen Fließtext eigenständig
+fehlerhaft als `PERSON` taggen — mit Lemmata, die sich nicht wie die
+deutsche Lemmatisierung verhalten (z. B. bleibt das Lemma einer
+substantivierten Präposition/eines Verbs bei der englischen Pipeline
+großgeschrieben, während die deutsche Pipeline korrekt kleinschreibt). Die
+reine POS-/Lemma-Prüfung (0.2.2–0.2.4) greift gegen dieses Muster nicht
+zuverlässig; deshalb ergänzt 0.2.5 eine vom Modell/der Version unabhängige
+Oberflächen-Härtung (Kontraktionswörter, Gattungsbegriff-Präfixmatch,
+deutsches Vokabular-Check). Automatisiert gegen beide Konstellationen
+getestet (mit und ohne installiertes `en_core_web_lg`) — Details siehe
+`CHANGELOG.md` 0.2.5 und `tests/test_security_boundaries.py`
+(`test_ner_run5_english_model_cross_contamination_hardened`).
+
+Empfehlung für produktive Installationen: `en_core_web_lg` nur installieren,
+wenn tatsächlich englischsprachige Dokumente anonymisiert werden — für rein
+deutsche Aktenbestände genügt `de_core_news_lg` allein und vermeidet dieses
+Fehlerbild von vornherein.
+
+```
+# requirements/pyproject-Kommentar (empfohlene, getestete Version):
+# de_core_news_lg==3.8.0  (spacy==3.8.14)
+```
 
 ## Unterstützte Formate
 

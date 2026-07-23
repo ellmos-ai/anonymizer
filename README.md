@@ -45,6 +45,51 @@ PDF-Schwärzung ist nicht reversibel. `DocumentDeanonymizer` kopiert bereits
 geschwärzte PDFs lediglich weiter; eine vollständige Wiederherstellung wird
 nicht versprochen.
 
+## Rechtlicher Rahmen und Verantwortung
+
+`anonymizer` **pseudonymisiert** Dokumente — es anonymisiert im
+datenschutzrechtlichen Sinn nicht. Nach Art. 4 Nr. 5 DSGVO ersetzt
+Pseudonymisierung identifizierende Merkmale durch ein Pseudonym, ohne den
+Personenbezug technisch endgültig aufzuheben: Die verschlüsselte
+Zuordnungstabelle (siehe „Sicherheitsvertrag") macht eine Re-Identifizierung
+durch den Verwender bewusst möglich (`DocumentDeanonymizer`). Die
+verarbeiteten Dokumente bleiben deshalb personenbezogene Daten im Sinne der
+DSGVO, und die Verantwortung für Rechtsgrundlage, Zweckbindung,
+Speicherbegrenzung und technisch-organisatorische Maßnahmen (Art. 5, 6, 24,
+32 DSGVO) verbleibt vollständig beim Verwender des Moduls. Das Modul liefert
+eine technische Schutzmaßnahme, keine rechtliche Bewertung und keine Garantie
+für einen bestimmten DSGVO-Compliance-Status.
+
+Für **Berufsgeheimnisträger** (§ 203 StGB, z. B. Ärzt:innen,
+Psychotherapeut:innen, Rechtsanwält:innen, Sozialarbeiter:innen) gilt
+zusätzlich: Der Einsatz von `anonymizer` entbindet nicht von den
+berufsrechtlichen Schweigepflichten. Insbesondere bleibt die Weitergabe
+pseudonymisierter Dokumente an Dritte (einschließlich Cloud-Dienste,
+KI-Anbieter oder sonstige Auftragsverarbeiter) eigenverantwortlich zu prüfen.
+Das Modul gibt — wie unter „Unterstützte Formate" und in `SECURITY.md`
+dokumentiert — **keine Garantie**, dass sämtliche personenbezogenen Daten
+vollständig erkannt und entfernt werden: Die Personennamenerkennung (NER) ist
+modellbasiert und fehleranfällig, bildhaltige Inhalte werden ohne
+OCR-Prüfung standardmäßig abgelehnt, und nicht unterstützte Formate werden
+nicht verarbeitet. Vor jeder Weitergabe ist eine manuelle Endkontrolle durch
+den Verwender erforderlich.
+
+**Legal note (English summary):** `anonymizer` performs pseudonymization, not
+GDPR-grade anonymization — identifying data is replaced by a reversible
+pseudonym (Art. 4(5) GDPR), and the encrypted key file allows
+re-identification by design. Processed documents remain personal data under
+GDPR; legal basis, purpose limitation, and technical/organizational measures
+(Art. 5, 6, 24, 32 GDPR) remain the sole responsibility of the operator. For
+professionals bound by statutory confidentiality duties (e.g., doctors,
+therapists, lawyers — cf. German § 203 StGB and equivalent regimes
+elsewhere), using this module does not discharge those duties, and sharing
+pseudonymized output with third parties (including cloud or AI providers)
+must be assessed independently. The module gives **no guarantee** that all
+personal data is detected and removed — NER is model-based and fallible,
+image content is rejected by default without OCR verification, and
+unsupported formats are not processed. A manual final review before
+disclosure is required.
+
 ## Installation
 
 Virtuelle Umgebungen und Schlüssel gehören außerhalb von OneDrive:

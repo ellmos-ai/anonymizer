@@ -11,17 +11,37 @@ Stand: 2026-07-16, Version 0.2.0
 | Schlüsselablage | grün | Cloud-/Traversal-/Symlink-Grenzen und atomare verschlüsselte Ablage |
 | Formate | grün, fail-closed | DOCX/XLSX/PDF-Restdaten- und Medienkontrollen |
 | CLI | grün | echte Unterbefehle, verdeckte Geheimnisse, belastbare Exitcodes |
-| Public Release | gesperrt | privates Modul; kein eigenes Git-Repository und kein Legal/Privacy-Release |
+| Public Release | Tech-Gates erfüllt, Freigabe ausstehend | Git+CI+Legal-Text+NER-Realtest seit 2026-07-23 grün; offen: /repo-publish-check, User-Freigabe, Umschalten `visibility`/Beschreibung von "privat" |
 
 ## Public-Fahrplan (User-Entscheidung 2026-07-23: veröffentlichen nach
 worksheet-generator + Berichts-Kern)
 
-- [ ] Git-Repo initialisieren (Review-/Signaturprozess), CI (Lint+Tests,
-  Unix-Runner für Symlink-Tests), Bandit/Twine.
-- [ ] Realer NER-Modelltest (de_core_news_lg/en_core_web_lg, synthetisch).
-- [ ] README-Ergänzungen für Public: § 203 StGB-Verantwortungshinweis für
-  Berufsgeheimnisträger, DSGVO-Einordnung (Pseudonymisierung ≠ Anonymisierung).
+- [x] 2026-07-23: Git-Repo initialisiert (Branch `main`, Initial-Commit
+  `2ef2e11`), `.github/workflows/ci.yml` angelegt (Python 3.11/3.12-Matrix
+  auf `ubuntu-latest` löst die 2 Windows-Symlink-Skips; Lint-Job mit
+  ruff + py_compile-Fallback; Bandit-Job `bandit -r anonymizer_modul -ll`).
+  Twine bleibt manueller Schritt vor dem eigentlichen PyPI-Release, kein
+  CI-Job. Kein Remote/Push — macht der Operator.
+- [x] 2026-07-23: Realer NER-Modelltest mit `de_core_news_lg` (spaCy 3.8.14)
+  gegen 10 ausschließlich synthetische Namen (Testperson Beispielmann u. a.)
+  in einem sozialpädagogischen Beispieltext: **7/10 Nachnamen erkannt**
+  (`Anke Testlehrer`, `Beispielmann`, `Erika Musterfrau`, `Finn
+  Beispielkind`, `Johann Mustermann`, `Klaus Erfundenmann`, `Thomas
+  Musterleiter`). Nicht erkannt: `Fallbeispiel` (nur Vorname „Petra"
+  erfasst), `Testfall` (Titel „Dr." vor dem Namen störte offenbar die
+  Erkennung), `Testkind`. Modell lädt und arbeitet korrekt; Erkennungsrate
+  ist modelltypisch nicht vollständig — bestätigt die bestehende
+  „keine Garantie vollständiger Erkennung"-Formulierung in README/SECURITY.
+  `en_core_web_lg` wurde in diesem Lauf nicht installiert (nicht angefordert,
+  ~500 MB zusätzlich); NER_MODELS bleibt für beide Sprachen konfiguriert.
+- [x] 2026-07-23: README-Ergänzung „Rechtlicher Rahmen und Verantwortung":
+  Pseudonymisierung ≠ Anonymisierung (Art. 4 Nr. 5, 5, 6, 24, 32 DSGVO),
+  § 203 StGB-Hinweis für Berufsgeheimnisträger, englische Kurzfassung
+  („Legal note (English summary)") am Abschnittsende.
 - [ ] Release-Gates via /repo-publish-check → User-Freigabe → Public (MIT).
+  Weiterhin offen: `ellmos-module.json`/`pyproject.toml` tragen noch
+  `visibility: "private"` bzw. eine `PRIVAT:`-Beschreibung — bewusst nicht
+  automatisch umgeschaltet, das ist der eigentliche Public-Freigabeschritt.
 
 ## Offen
 
@@ -30,10 +50,20 @@ worksheet-generator + Berichts-Kern)
   Dokumentation bereinigen.
 - [ ] Einen kontrollierten OCR-Workflow definieren, bevor bildhaltige
   DOCX/XLSX/PDF-Dateien als anonymisierbar gelten dürfen.
-- [ ] Mit installierten `de_core_news_lg`- und `en_core_web_lg`-Modellen einen
-  realistischen, ausschließlich synthetischen NER-Qualitätstest ausführen.
-- [ ] Entscheiden, ob der Privatbereich bewusst ohne Git bleibt oder ein
-  separates privates Repository mit Review-/Signaturprozess erhält.
+- [ ] Optional: NER-Test zusätzlich mit `en_core_web_lg` wiederholen (in
+  diesem Lauf nicht installiert, siehe Public-Fahrplan).
+- [ ] **CI-Blocker:** `bandit -r anonymizer_modul -ll` (neuer CI-Job) schlägt
+  lokal mit 3× Medium/B314 fehl: `xml.etree.ElementTree.fromstring` in
+  `core.py:592/631/668` parst OOXML-Daten (DOCX/XLSX = ZIP+XML) ohne
+  `defusedxml` — bei böswillig präparierten Eingabedateien potenziell
+  XML-Entity-/Billion-Laughs-anfällig. Nicht selbständig gepatcht (sicherheits-
+  kritischer Kernpfad, gehört in den etablierten Review-Prozess wie
+  `SECURITY_REVIEW_2026-07-16.md`). Fix-Optionen: `defusedxml.ElementTree`
+  statt `xml.etree.ElementTree` an den 3 Stellen, oder begründetes `# nosec
+  B314` falls die Zip-/Größenlimits vorgelagert bereits ausreichend schützen
+  — muss geprüft werden. Bis dahin bleibt der Bandit-Job im CI rot.
+- [x] 2026-07-23: Git-Entscheidung getroffen — eigenes Repo (Branch `main`)
+  im Modulordner selbst initialisiert statt separatem Privatbereich.
 
 ## Erledigt
 

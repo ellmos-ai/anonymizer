@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.2.2 — 2026-07-23
+
+- **NER-Plausibilitätsfilter strukturell auf POS/Lemma umgestellt**
+  (foerderplaner-Referenzlauf RUN2, Nachbefund zu 0.2.1): Die reine
+  Wortlisten-Allowlist aus 0.2.1 war nur ein Symptom-Fix — sie deckte weder
+  Flexionsformen ("Landkreises", Genitiv) noch das Grundproblem ab, dass
+  Großschreibung im Deutschen KEIN Personen-Signal ist (jedes Substantiv
+  wird großgeschrieben). Reale, weiterhin sinnentstellende Fehl-Ersetzungen
+  aus RUN2: "Grob bewegt Kim sich..." → "Amara Albrecht bewegt Lina
+  sich...", "Beim Anziehen"/"Klettverschlüsse"/"Beim Essen"/
+  "Reißverschlüssen"/"Einrichtungsangaben" → Fake-Namen, "Landkreises
+  Lörrach" (Genitiv) weiter ersetzt.
+  - `_NER_KEEP_COMPONENTS` erweitert (tagger/morphologizer/lemmatizer/
+    attribute_ruler zusätzlich zu tok2vec+ner; nur `parser` bleibt
+    ausgeschlossen) — liefert `token.pos_`/`token.lemma_`.
+  - Neue Span-Validierung: ein NER-PER-Span wird auf seine maximalen
+    zusammenhängenden PROPN-Token-Teilsequenzen gekürzt
+    (`_extract_name_token_runs`/`_is_name_token`) statt komplett verworfen
+    oder komplett akzeptiert zu werden — mit begrenzten Rettungsankern für
+    Titel-Token (Dr./Prof.) und bekannte deutsche Vornamen bei
+    POS-Fehltagging (kein Pflichtanker: unbekannte Namen wie "Amara
+    Diallo" bleiben allein über PROPN erkennbar).
+  - Gattungsbegriff-Denyliste zusätzlich auf LEMMA-Basis geprüft
+    (`_tokens_pass_lemma_denylist`) — deckt Flexionsformen ab
+    ("Landkreises" → Lemma "Landkreis"); die bisherige
+    Oberflächenformen-Prüfung bleibt als Fallback bestehen.
+  - Regressionstests mit den echten RUN2-Sätzen (skip-guarded auf
+    installiertes `de_core_news_lg`): nur "Kim" bleibt in den
+    Fehlalarm-Sätzen übrig, "Landkreises Lörrach"/"Einrichtungsangaben"
+    werden nicht mehr erfasst; "Kim Beispiel", "Dr. Anna Muster" und das
+    lexikonfreie "Amara Diallo" bleiben erkannt.
+  - Kosten: mehr Pipeline-Komponenten pro Dokumentdurchlauf (POS-Tagging/
+    Lemmatisierung); in Tests keine praktisch relevante Verlangsamung
+    (~3.600 Zeichen in ~0,25 s nach Modell-Warmup).
+
 ## 0.2.1 — 2026-07-23
 
 - Git-Repository initialisiert (Branch `main`), GitHub-Actions-CI angelegt

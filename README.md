@@ -1,6 +1,6 @@
 # anonymizer — Standalone-Modul
 
-`anonymizer` 0.2.1 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
+`anonymizer` 0.2.2 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
 Das Modul verarbeitet sensible personenbezogene Daten ausschließlich lokal;
 Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
 „Rechtlicher Rahmen und Verantwortung" weiter unten.
@@ -21,11 +21,18 @@ Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
 - Die automatische Personennamenerkennung arbeitet standardmäßig fail-closed:
   fehlen spaCy oder die konfigurierten Modelle, bricht der Scan ab. Ein
   reduzierter Modus muss explizit mit `require_ner=False` gewählt werden.
-- Die NER-Personennamenerkennung filtert erkannte Treffer zusätzlich gegen
-  eine Gattungsbegriff-/Stoppwortliste (Verwaltungs-, Rollen- und
-  Berichtsvokabular wie „Landkreis", „Förderung", „Zusage", „Ablauf") sowie
-  gegen Wort- und Satzfragment-Muster, bevor sie ersetzt werden — reduziert
-  NER-Fehlalarme auf generischen deutschen Substantiven, ohne die
+- Die NER-Personennamenerkennung validiert erkannte PER-Spans strukturell
+  über die Wortart (POS): Großschreibung ist im Deutschen **kein**
+  Personen-Signal (jedes Substantiv wird großgeschrieben), daher zählen nur
+  als Eigenname (PROPN) getaggte Tokens als Namensbestandteil — mit
+  begrenzten Rettungsankern für Titel („Dr.", „Prof.") und bekannte
+  Vornamen bei POS-Fehltagging. Ein zu weit gefasster NER-Span wird auf
+  seine maximale zusammenhängende Namens-Teilsequenz gekürzt statt ganz
+  verworfen (z. B. „Kim" aus „Grob bewegt Kim sich"), zusätzlich abgesichert
+  durch eine Gattungsbegriff-Denyliste (Verwaltungs-, Rollen- und
+  Berichtsvokabular wie „Landkreis", „Förderung") auf Lemma- **und**
+  Oberflächenform-Basis (deckt auch Flexionsformen wie „Landkreises" ab)
+  sowie Wort-/Satzfragment-Muster — reduziert NER-Fehlalarme, ohne die
   fail-closed-Grundregel zu lockern.
 - `word/media`/`xl/media`-Einträge (eingebettete Bilder) in DOCX/XLSX
   blockieren standardmäßig die Veröffentlichung (keine OCR-Garantie). Ein

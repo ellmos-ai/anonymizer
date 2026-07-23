@@ -36,8 +36,9 @@ Optionale Abhängigkeiten (pip install ...):
   pikepdf        — PDF-AES-256-Verschlüsselung
   openpyxl       — Excel-Anonymisierung
 
-Version: 0.2.1 (defusedxml-Härtung 2026-07-23; Basis: 0.2.0 Sicherheits- und
-Datenschutz-Härtung 2026-07-16)
+Version: 0.2.2 (NER-Plausibilitätsfilter strukturell auf POS/Lemma
+umgestellt 2026-07-23; Basis: 0.2.1 defusedxml-Härtung, 0.2.0 Sicherheits-
+und Datenschutz-Härtung 2026-07-16)
 Copyright (c) 2026 ellmos / BACH Contributors — MIT License
 """
 
@@ -810,7 +811,16 @@ def _publish_tree_atomically(staging: Path, destination: Path) -> None:
 # NER-Modell seltener zuverlaessig als PERSON erkennt.
 NER_MODELS = ("de_core_news_lg", "en_core_web_lg")
 _NER_PERSON_LABELS = {"PER", "PERSON"}
-_NER_KEEP_COMPONENTS = {"tok2vec", "ner"}
+# tagger/morphologizer liefern token.pos_, lemmatizer/attribute_ruler liefern
+# token.lemma_ -- beide werden fuer die POS-/Lemma-basierte Span-Validierung
+# unten gebraucht (Grossschreibung allein ist im Deutschen KEIN Personen-
+# Signal). "parser" bleibt bewusst ausgeschlossen (Satzstruktur wird hier
+# nicht gebraucht, spart Laufzeit); nicht jedes Modell hat jede Komponente
+# (z.B. hat en_core_web_lg keinen morphologizer) -- ungenutzte Namen werden
+# beim Laden einfach ignoriert.
+_NER_KEEP_COMPONENTS = {
+    "tok2vec", "tagger", "morphologizer", "lemmatizer", "attribute_ruler", "ner",
+}
 
 # Sicherheits-Obergrenze: Ein einzelnes klientenbezogenes Dokument (Protokoll,
 # Hilfeplan, Gruppenprotokoll) erwaehnt realistisch nur eine Handvoll Personen.
@@ -875,6 +885,109 @@ _NER_GENERIC_REPORT_NOUNS = {
     "datum", "unterschrift", "anlage", "anhang",
 }
 
+# Titel-Tokens vor einem Namen -- werden von spaCy meist NICHT als PROPN
+# getaggt (z.B. "Dr." -> NOUN), sollen aber innerhalb eines PER-Spans nicht
+# zum Verwerfen des ganzen Namens fuehren.
+_NER_TITLE_TOKENS = {"dr", "prof", "dipl", "dipl-ing", "mag"}
+
+# Bekannte deutsche Vornamen als Rettungsanker bei POS-Fehltagging (siehe
+# _is_name_token) -- KEIN Pflichtanker: unbekannte Namen (z.B. "Amara
+# Diallo") werden weiterhin allein ueber PROPN erkannt, diese Liste rettet
+# nur Faelle, in denen das Modell einen echten, bekannten Vornamen
+# faelschlich als NOUN statt PROPN taggt.
+_NER_KNOWN_FIRST_NAMES = DEUTSCHE_VORNAMEN_M | DEUTSCHE_VORNAMEN_W
+
+
+def _is_name_token(token) -> bool:
+    """
+    Ein einzelnes spaCy-Token gilt als Namensbestandteil, wenn es als
+    Eigenname (POS "PROPN") getaggt ist -- ODER ueber einen begrenzten
+    Rettungsanker bei POS-Fehltagging (Titel-Token wie "Dr."/"Prof.",
+    bekannter deutscher Vorname, Bindestrich-Verbinder in zusammen-
+    gesetzten Namen wie "Anna-Lena").
+
+    Grossschreibung allein ist im Deutschen KEIN Personen-Signal -- jedes
+    Substantiv wird grossgeschrieben. Die Wortart (POS) ist das eigentliche
+    Unterscheidungsmerkmal zwischen einem Eigennamen und einem generischen
+    Substantiv/Verb/etc., das NER faelschlich in denselben Span zieht.
+    """
+    text = token.text.strip(".,;:!?()[]{}\"'")
+    if not text:
+        return False
+    if text in ("-", "‐", "–", "—"):
+        return True
+    core = text.strip("-")
+    if not core:
+        return False
+    if getattr(token, "pos_", None) == "PROPN":
+        return True
+    lower = core.lower()
+    if lower in _NER_TITLE_TOKENS:
+        return True
+    if lower in _NER_KNOWN_FIRST_NAMES:
+        return True
+    return False
+
+
+def _extract_name_token_runs(ent) -> List[list]:
+    """
+    Zerlegt einen NER-PER-Span in seine maximalen zusammenhaengenden
+    Token-Teilsequenzen, die _is_name_token als Namensbestandteil
+    einstuft; alle anderen Tokens (VERB/ADV/ADP/DET/PRON/NOUN/...) werden
+    verworfen, OHNE dass der ganze Span aufgegeben wird.
+
+    Ohne diese Zerlegung reisst ein zu weit gefasster NER-Span oft ganze
+    Beobachtungsfragmente statt nur des Namens heraus -- empirisch belegt
+    im foerderplaner-Referenzlauf: "Kim" aus "Grob bewegt Kim sich" (ADV/
+    VERB/PRON drumherum) oder "Kim" aus "... braucht Kim noch
+    Schwierigkeiten" (nachfolgendes NOUN faelschlich mit im Span).
+    """
+    runs: List[list] = []
+    current: list = []
+    for token in ent:
+        if _is_name_token(token):
+            current.append(token)
+        else:
+            if current:
+                runs.append(current)
+            current = []
+    if current:
+        runs.append(current)
+    return runs
+
+
+def _tokens_to_name_text(tokens: list) -> str:
+    """Rekonstruiert den Text einer Token-Sequenz inkl. Original-Whitespace
+    zwischen den Tokens (z.B. Bindestrich ohne umgebende Leerzeichen)."""
+    return "".join(getattr(tok, "text_with_ws", tok.text) for tok in tokens).rstrip()
+
+
+def _tokens_end_char(tokens: list) -> int:
+    """Zeichen-Endoffset der letzten Token in einer Sequenz (fuer den
+    Wortgrenzen-Check gegen NER-Fragment-Ersetzung)."""
+    last = tokens[-1]
+    idx = getattr(last, "idx", None)
+    if idx is None:
+        return len(_tokens_to_name_text(tokens))
+    return idx + len(last.text)
+
+
+def _tokens_pass_lemma_denylist(tokens: list) -> bool:
+    """
+    Gattungsbegriff-Pruefung auf LEMMA-Basis statt Oberflaechenform --
+    deckt Flexionsformen ab, die die oberflaechenformbasierte Pruefung in
+    _looks_like_person_name verpasst (z.B. Genitiv "Landkreises" -> Lemma
+    "Landkreis", Plural "Foerderungen" -> Lemma "Foerderung"). Die
+    Oberflaechenformen-Liste bleibt in _looks_like_person_name als
+    Fallback bestehen (z.B. wenn ein Lemmatizer-Modell fehlt/abweicht).
+    """
+    for tok in tokens:
+        lemma = getattr(tok, "lemma_", None) or tok.text
+        lemma = lemma.strip(".,;:!?()[]{}\"'-").lower()
+        if lemma in _NER_GENERIC_ROLE_NOUNS or lemma in _NER_GENERIC_REPORT_NOUNS:
+            return False
+    return True
+
 
 def _looks_like_person_name(name: str) -> bool:
     """
@@ -917,11 +1030,16 @@ _spacy_model_cache: Dict[str, "object"] = {}
 
 
 def _get_spacy_model(model_name: str):
-    """Laedt ein spaCy-Modell einmalig (teuer, ~5s) und cached es pro Prozess.
+    """Laedt ein spaCy-Modell einmalig (teuer, mehrere Sekunden) und cached
+    es pro Prozess.
 
-    Unnoetige Pipeline-Komponenten (Parser/Tagger/Lemmatizer/...) werden beim
-    Laden ausgeschlossen -- nur tok2vec (Wortvektoren) + ner werden fuer die
-    Personennamen-Erkennung gebraucht.
+    Nur "parser" (Satzstruktur, hier ungenutzt) wird ausgeschlossen. tagger/
+    morphologizer/lemmatizer/attribute_ruler bleiben aktiv, weil die POS-/
+    Lemma-basierte Span-Validierung in detect_person_names_ner() sie
+    braucht -- das kostet mehr Laufzeit pro Dokument als die fruehere
+    tok2vec+ner-Minimalpipeline, ist aber Voraussetzung fuer die
+    strukturelle (statt oberflaechenform-basierte) NER-Plausibilitaets-
+    pruefung.
     """
     if model_name in _spacy_model_cache:
         return _spacy_model_cache[model_name]
@@ -982,22 +1100,32 @@ def detect_person_names_ner(
             for ent in doc.ents:
                 if ent.label_ not in _NER_PERSON_LABELS:
                     continue
-                name = ent.text.strip()
-                if not name or any(ch.isdigit() for ch in name):
-                    continue
-                if name.lower() in wl_lower:
-                    continue
-                if not _looks_like_person_name(name):
-                    continue
-                # Wortgrenzen-Check: folgt direkt (ohne Trennzeichen) ein
-                # Kleinbuchstabe, ist die Entitaet nur der ANFANG eines
-                # zusammengesetzten deutschen Wortes (z.B. NER erkennt
-                # "Wahrnehmung" als Namensbeginn von "Wahrnehmungsbesonder-
-                # heiten") -- Ersetzung wuerde ein Wortfragment hinterlassen.
-                next_char = chunk[ent.end_char:ent.end_char + 1]
-                if next_char and next_char.isalpha() and next_char.islower():
-                    continue
-                chunk_names.add(name)
+                # POS-basierte Span-Validierung statt reiner Grossschreibung
+                # (die im Deutschen KEIN Personen-Signal ist -- jedes
+                # Substantiv wird grossgeschrieben): der Span wird auf seine
+                # maximalen PROPN-Teilsequenzen gekuerzt, andere Wortarten
+                # (VERB/ADV/ADP/DET/PRON/NOUN/...) reissen NICHT mehr den
+                # gesamten Span mit ("Kim" aus "Grob bewegt Kim sich").
+                for tokens in _extract_name_token_runs(ent):
+                    name = _tokens_to_name_text(tokens)
+                    if not name or any(ch.isdigit() for ch in name):
+                        continue
+                    if name.lower() in wl_lower:
+                        continue
+                    if not _looks_like_person_name(name):
+                        continue
+                    if not _tokens_pass_lemma_denylist(tokens):
+                        continue
+                    # Wortgrenzen-Check: folgt direkt (ohne Trennzeichen) ein
+                    # Kleinbuchstabe, ist die Entitaet nur der ANFANG eines
+                    # zusammengesetzten deutschen Wortes (z.B. NER erkennt
+                    # "Wahrnehmung" als Namensbeginn von "Wahrnehmungsbesonder-
+                    # heiten") -- Ersetzung wuerde ein Wortfragment hinterlassen.
+                    end_char = _tokens_end_char(tokens)
+                    next_char = chunk[end_char:end_char + 1]
+                    if next_char and next_char.isalpha() and next_char.islower():
+                        continue
+                    chunk_names.add(name)
 
             if len(chunk_names) > _NER_MAX_NAMES_PER_CHUNK:
                 if fail_on_ambiguous:
@@ -2478,7 +2606,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     import argparse
     import getpass
 
-    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.1")
+    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.2")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("self-test", aliases=["test"], help="lokalen Selbsttest ausführen")
 

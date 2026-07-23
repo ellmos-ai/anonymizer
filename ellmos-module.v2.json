@@ -2,7 +2,7 @@
   "schema": "ellmos.module.v2",
   "id": "anonymizer",
   "display_name": "Anonymizer",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Private fail-closed pseudonymization service for sensitive local documents.",
   "package": "anonymizer-modul",
   "entrypoints": {

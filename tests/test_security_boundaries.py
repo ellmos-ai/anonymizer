@@ -42,6 +42,55 @@ def profile() -> AnonymProfile:
     )
 
 
+class FakeToken:
+    """Minimal spaCy-Token-Double fuer die POS-/Lemma-basierte NER-Span-
+    Validierung (nur die tatsaechlich genutzten Attribute: text, pos_,
+    lemma_, idx, whitespace_/text_with_ws)."""
+
+    def __init__(self, text, pos="PROPN", lemma=None, idx=0, ws=" "):
+        self.text = text
+        self.pos_ = pos
+        self.lemma_ = lemma if lemma is not None else text
+        self.idx = idx
+        self.whitespace_ = ws
+
+    @property
+    def text_with_ws(self):
+        return self.text + self.whitespace_
+
+
+def fake_tokens(*specs):
+    """Baut eine Liste FakeToken aus (text, pos[, lemma])-Tupeln mit
+    fortlaufenden Zeichen-Offsets; das letzte Token bekommt keinen
+    trailing Whitespace."""
+    tokens = []
+    cursor = 0
+    for spec in specs:
+        text, pos = spec[0], spec[1]
+        lemma = spec[2] if len(spec) > 2 else text
+        tokens.append(FakeToken(text, pos=pos, lemma=lemma, idx=cursor))
+        cursor += len(text) + 1
+    if tokens:
+        tokens[-1].whitespace_ = ""
+    return tokens
+
+
+class FakeEnt:
+    """Minimaler spaCy-Span-Double: iterierbar ueber FakeToken, mit label_
+    fuer den PER/PERSON-Filter in detect_person_names_ner()."""
+
+    def __init__(self, tokens, label="PER"):
+        self._tokens = tokens
+        self.label_ = label
+        self.text = "".join(t.text_with_ws for t in tokens).rstrip()
+
+    def __iter__(self):
+        return iter(self._tokens)
+
+    def __len__(self):
+        return len(self._tokens)
+
+
 class TestDetectionBoundary(unittest.TestCase):
     def test_ooxml_identity_attributes_enter_discovery_without_cross_value_matches(self):
         email = "Attribute.Person@Clinic.invalid"
@@ -88,12 +137,19 @@ class TestDetectionBoundary(unittest.TestCase):
             max_length = 10_000
 
             def __call__(self, text):
+                # idx bewusst ans Chunk-Ende gelegt (wie das vorherige
+                # end_char=len(text)): chunk[idx:idx+1] ist dann "" (out of
+                # bounds), damit der Wortgrenzen-Check hier nicht eingreift
+                # -- dieser Test prueft ausschliesslich das Mengenlimit.
                 entities = [
-                    SimpleNamespace(
-                        label_="PERSON",
-                        text=f"Name{chr(65 + index // 26)}{chr(65 + index % 26)}",
-                        end_char=len(text),
-                    )
+                    FakeEnt([
+                        FakeToken(
+                            f"Name{chr(65 + index // 26)}{chr(65 + index % 26)}",
+                            pos="PROPN",
+                            idx=len(text),
+                            ws="",
+                        )
+                    ])
                     for index in range(core._NER_MAX_NAMES_PER_CHUNK + 1)
                 ]
                 return SimpleNamespace(ents=entities)
@@ -106,6 +162,28 @@ class TestDetectionBoundary(unittest.TestCase):
         ):
             with self.assertRaises(RuntimeError):
                 DocumentAnonymizer().scan_text_for_sensitive_data("synthetic text")
+
+    def test_extract_name_token_runs_shrinks_to_propn_subsequence(self):
+        """Direkter Unit-Test der POS-basierten Span-Kuerzung ohne Modell:
+        ein zu weit gefasster Span mit VERB/ADV/PRON-Rauschen um ein
+        einzelnes PROPN-Token liefert nur dieses Token als Rest -- das
+        strukturelle Gegenstueck zum realen "Grob bewegt Kim sich"-Fund."""
+        tokens = fake_tokens(
+            ("Grob", "ADV"), ("bewegt", "VERB"), ("Kim", "PROPN"), ("sich", "PRON"),
+        )
+        runs = core._extract_name_token_runs(FakeEnt(tokens))
+        self.assertEqual([core._tokens_to_name_text(r) for r in runs], ["Kim"])
+
+    def test_tokens_pass_lemma_denylist_catches_inflected_forms(self):
+        """Genitiv 'Landkreises' (Lemma 'Landkreis') wird ueber das Lemma
+        erfasst, obwohl die Oberflaechenform nicht woertlich in der
+        Denyliste steht."""
+        self.assertFalse(
+            core._tokens_pass_lemma_denylist(fake_tokens(("Landkreises", "NOUN", "Landkreis")))
+        )
+        self.assertTrue(
+            core._tokens_pass_lemma_denylist(fake_tokens(("Kim", "PROPN", "Kim")))
+        )
 
     def test_looks_like_person_name_rejects_generic_report_and_admin_nouns(self):
         """Direct filter-level regression for the observed foerderplaner
@@ -126,35 +204,64 @@ class TestDetectionBoundary(unittest.TestCase):
                 f"{candidate!r} should still pass as a plausible person name",
             )
 
-    def test_ner_overblocking_generic_nouns_filtered_end_to_end(self):
-        """End-to-end via detect_person_names_ner with a fake model that
-        reproduces the real over-blocking pattern (generic nouns tagged PER
-        alongside a genuine name in the same chunk)."""
-        class FakeModel:
-            max_length = 10_000
+    @unittest.skipUnless(
+        core.SPACY_AVAILABLE and core._get_spacy_model("de_core_news_lg") is not None,
+        "de_core_news_lg model required for the real NER regression",
+    )
+    def test_ner_run2_regression_real_sentences_no_false_names(self):
+        """Regression mit den ECHTEN Saetzen aus dem foerderplaner-
+        Referenzlauf RUN2 (2026-07-23,
+        ARCHIV_2026-07-23_RUN2/UMGEBUNG.md): NER ueberdehnt den PER-Span
+        haeufig auf benachbarte generische Woerter ("Kim Schwierigkeiten",
+        "Grob bewegt Kim sich"); nach der POS-/Lemma-basierten Kuerzung
+        darf ausschliesslich "Kim" uebrig bleiben, nie die generischen
+        Nachbarwoerter oder die flektierte Genitivform "Landkreises"."""
+        cases = [
+            (
+                "Grob bewegt Kim sich altersgemäß, beim Umgang mit kleinen "
+                "Gegenständen mit den Fingern braucht Kim noch etwas "
+                "Unterstützung.",
+                ["Kim"],
+            ),
+            ("Beim Anziehen gelingt es Kim, Klettverschlüsse selbst zu öffnen.", ["Kim"]),
+            ("Beim Essen kommt Kim allein zurecht.", ["Kim"]),
+            ("Kim hat noch Schwierigkeiten bei Knöpfen und Reißverschlüssen.", ["Kim"]),
+            (
+                "Alle Namen, Daten und Einrichtungsangaben in diesem Bericht "
+                "sind fiktiv.",
+                [],
+            ),
+            (
+                "Der Antrag wurde im Rahmen der Bewilligung des fiktiven "
+                "Landkreises Lörrach genehmigt.",
+                [],
+            ),
+            ("Aus fachlicher Sicht sollte die Förderung von Kim weitergehen.", ["Kim"]),
+        ]
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertEqual(sorted(core.detect_person_names_ner(text)), sorted(expected))
 
-            def __call__(self, text):
-                spans = ["Landkreis Lörrach", "Förderung", "Zusage", "Ablauf", "Kim"]
-                entities = []
-                cursor = 0
-                for span in spans:
-                    start = text.index(span, cursor)
-                    end = start + len(span)
-                    cursor = end
-                    entities.append(SimpleNamespace(label_="PER", text=span, end_char=end))
-                return SimpleNamespace(ents=entities)
-
-        text = (
-            "Landkreis Lörrach informiert: Die Förderung wurde erteilt, die "
-            "Zusage liegt vor, der Ablauf ist geregelt. Kim wurde vorgestellt."
-        )
-        with (
-            mock.patch.object(core, "SPACY_AVAILABLE", True),
-            mock.patch.object(core, "NER_MODELS", ("fixture-model",)),
-            mock.patch.object(core, "_get_spacy_model", return_value=FakeModel()),
-        ):
-            names = core.detect_person_names_ner(text)
-        self.assertEqual(names, ["Kim"])
+    @unittest.skipUnless(
+        core.SPACY_AVAILABLE and core._get_spacy_model("de_core_news_lg") is not None,
+        "de_core_news_lg model required for the real NER regression",
+    )
+    def test_ner_run2_regression_positive_names_still_detected(self):
+        """Echte synthetische Namen -- inklusive eines Namens OHNE
+        Lexikon-Eintrag ('Amara Diallo') -- muessen nach dem strukturellen
+        POS-Fix weiterhin erkannt werden. Die Vornamensliste ist kein
+        Pflichtanker, sondern nur ein Rettungsanker bei POS-Fehltagging."""
+        cases = [
+            (
+                "Kim Beispiel wurde vorgestellt. Dr. Anna Muster war "
+                "ebenfalls anwesend.",
+                {"Kim", "Anna Muster"},
+            ),
+            ("Amara Diallo wurde vorgestellt.", {"Amara Diallo"}),
+        ]
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertEqual(set(core.detect_person_names_ner(text)), expected)
 
     def test_mixed_case_email_is_replaced_without_lowercasing_the_source(self):
         email = "Alice.Example@Unknown.com"

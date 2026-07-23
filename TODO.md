@@ -1,6 +1,6 @@
 # TODO — anonymizer
 
-Stand: 2026-07-23, Version 0.2.1
+Stand: 2026-07-23, Version 0.2.2
 
 ## Status
 
@@ -87,20 +87,34 @@ worksheet-generator + Berichts-Kern)
   Regressionstests: `test_trusted_template_media_hash_match_publishes`,
   `test_trusted_template_media_hash_mismatch_still_blocks`
   (`tests/test_security_boundaries.py`).
-- [x] 2026-07-23: **Referenzlauf-Fund B behoben (NER-Overblocking):**
-  `de_core_news_lg` markierte reale Verwaltungs-/Berichtssubstantive
-  ("Landkreis Lörrach", "Förderung", "Zusage", "Ablauf") als Personennamen.
-  `_looks_like_person_name()` prüft Gattungsbegriffe jetzt an jeder
-  Wortposition (nicht nur bei Einzelwort-Treffern) gegen die erweiterte
-  `_NER_GENERIC_REPORT_NOUNS`-Liste; `_NER_MID_SPAN_STOPWORDS` um
-  Reflexivpronomen/Modalverben ergänzt (Fragment-Ersetzungs-Risiko wie im
-  berichteten "Grob bewegt Kim sich"-Muster reduziert — dieser konkrete Fall
-  wurde mangels Original-Quelltext nicht eigenständig reproduziert, sondern
-  über denselben Mechanismus mitgehärtet). Echte synthetische Namen ("Kim",
-  "Anna Muster") bleiben erkannt. Regressionstests:
-  `test_looks_like_person_name_rejects_generic_report_and_admin_nouns`,
-  `test_ner_overblocking_generic_nouns_filtered_end_to_end`
-  (`tests/test_security_boundaries.py`).
+- [x] 2026-07-23: **Referenzlauf-Fund B — erst Symptom-Fix, dann strukturell
+  behoben (RUN2-Nachbefund):** Der erste Fix (Wortlisten-Allowlist gegen
+  "Landkreis Lörrach"/"Förderung"/"Zusage"/"Ablauf") war nur ein
+  Symptom-Fix — deckte weder Flexionsformen ("Landkreises", Genitiv) noch
+  das Grundproblem ab. Referenzlauf RUN2 bestätigte weiterhin
+  sinnentstellende Fehl-Ersetzungen: "Grob bewegt Kim sich..." →
+  "Amara Albrecht bewegt Lina sich...", "Beim Anziehen"/
+  "Klettverschlüsse"/"Beim Essen"/"Reißverschlüssen"/
+  "Einrichtungsangaben" → Fake-Namen, "Landkreises Lörrach" (Genitiv)
+  weiter ersetzt. Strukturell nachgebessert: `_NER_KEEP_COMPONENTS`
+  erweitert (tagger/morphologizer/lemmatizer/attribute_ruler zusätzlich zu
+  tok2vec+ner) liefert `token.pos_`/`token.lemma_`; ein NER-PER-Span wird
+  jetzt auf seine maximalen zusammenhängenden PROPN-Token-Teilsequenzen
+  gekürzt (`_extract_name_token_runs`/`_is_name_token`) statt komplett
+  verworfen/akzeptiert — mit Rettungsankern für Titel (Dr./Prof.) und
+  bekannte Vornamen bei POS-Fehltagging (kein Pflichtanker: "Amara Diallo"
+  ohne Lexikon-Eintrag bleibt über PROPN erkennbar). Gattungsbegriff-
+  Denyliste zusätzlich auf LEMMA-Basis (`_tokens_pass_lemma_denylist`,
+  deckt "Landkreises"→"Landkreis" ab); Oberflächenformen-Prüfung bleibt
+  Fallback. Regressionstests mit den echten RUN2-Sätzen (skip-guarded auf
+  installiertes `de_core_news_lg`):
+  `test_ner_run2_regression_real_sentences_no_false_names`,
+  `test_ner_run2_regression_positive_names_still_detected`, plus
+  modellfreie Unit-Tests `test_extract_name_token_runs_shrinks_to_propn_subsequence`,
+  `test_tokens_pass_lemma_denylist_catches_inflected_forms`
+  (`tests/test_security_boundaries.py`). Kosten: mehr Pipeline-
+  Komponenten pro Dokument (~3.600 Zeichen in ~0,25 s nach Warmup, keine
+  praktisch relevante Verlangsamung in Tests).
 - [x] 2026-07-16: Vollständiger Privacy-/Security-Review des 0.1.0-Snapshots;
   fail-closed Ordnerveröffentlichung, Pfad-/Symlink-/Cloud-Grenzen,
   transaktionale Einzeldatei-Verarbeitung, sichere Schlüsseldateien,

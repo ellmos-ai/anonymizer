@@ -1,8 +1,9 @@
-# anonymizer — privates Standalone-Modul
+# anonymizer — Standalone-Modul
 
-`anonymizer` 0.2.0 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
-Das Modul verarbeitet sensible Klientendaten und ist nicht zur öffentlichen
-Veröffentlichung freigegeben.
+`anonymizer` 0.2.1 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
+Das Modul verarbeitet sensible personenbezogene Daten ausschließlich lokal;
+Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
+„Rechtlicher Rahmen und Verantwortung" weiter unten.
 
 ## Sicherheitsvertrag
 
@@ -163,8 +164,7 @@ python -m anonymizer_modul.core self-test
 ```
 
 Der aktuelle Prüfstand steht in `RELEASE_GATE.md`; die detaillierte
-Datenschutzprüfung in `SECURITY_REVIEW_2026-07-16.md`. Der Ordner ist kein
-Git-Repository und bleibt ein privater Entwicklungsbaustein.
+Datenschutzprüfung in `SECURITY_REVIEW_2026-07-16.md`.
 
 ## Integration
 

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.1 — 2026-07-23
+
+- Git-Repository initialisiert (Branch `main`), GitHub-Actions-CI angelegt
+  (Python 3.11/3.12-Matrix auf ubuntu-latest, Lint-Job, Bandit-Job).
+- OOXML-Parsing gehärtet: `xml.etree.ElementTree` durch `defusedxml.ElementTree`
+  ersetzt (3 Stellen in `core.py`, XML-Entity-/Billion-Laughs-Schutz beim
+  Einlesen von DOCX-/XLSX-Daten); `defusedxml` als Pflichtabhängigkeit ergänzt.
+  Bandit (`bandit -r anonymizer_modul -ll`) danach ohne Befunde.
+- README um den Abschnitt „Rechtlicher Rahmen und Verantwortung" ergänzt:
+  Pseudonymisierung ≠ Anonymisierung (DSGVO), § 203 StGB-Hinweis für
+  Berufsgeheimnisträger, englische Kurzfassung.
+- Realer NER-Qualitätstest mit `de_core_news_lg` gegen ausschließlich
+  synthetische Namen durchgeführt (Ergebnis: `TODO.md`).
+- Public-Metadaten vorbereitet: README-Kopfsatz, `pyproject.toml`-Beschreibung
+  und `ellmos-module.json`-`visibility` (→ `public-candidate`) von der
+  bisherigen "PRIVAT"-Kennzeichnung befreit; tatsächliche Veröffentlichung
+  bleibt ein separater Freigabeschritt (/repo-publish-check, Operator).
+
 ## 0.2.0 — 2026-07-16
 
 - Ordnerverarbeitung transaktional und fail-closed gemacht; nicht unterstützte

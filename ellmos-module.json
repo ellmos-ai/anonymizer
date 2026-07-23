@@ -2,10 +2,10 @@
   "$schema": "ellmos-module-v1",
   "name": "anonymizer",
   "display_name": "Anonymizer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "kind": "standalone-module",
-  "visibility": "private",
-  "description": "PRIVAT: Fail-closed Pseudonymisierung personenbezogener Dokumente (Text, DOCX, PDF, XLSX) mit lokaler authentifiziert verschlüsselter Schlüsselspeicherung.",
+  "visibility": "public-candidate",
+  "description": "Fail-closed Pseudonymisierung personenbezogener Dokumente (Text, DOCX, PDF, XLSX) mit lokaler authentifiziert verschlüsselter Schlüsselspeicherung.",
 
   "origin": {
     "source": "BACH hub/_services/document/anonymizer_service.py v1.2.0",
@@ -35,7 +35,8 @@
   ],
 
   "required_dependencies": {
-    "cryptography": "Fernet-authentifizierte Schlüsselverschlüsselung mit PBKDF2-HMAC-SHA256"
+    "cryptography": "Fernet-authentifizierte Schlüsselverschlüsselung mit PBKDF2-HMAC-SHA256",
+    "defusedxml": "gehärtetes OOXML-Parsing (DOCX/XLSX) gegen XML-Entity-Angriffe"
   },
 
   "optional_dependencies": {
@@ -83,5 +84,5 @@
     "wiring_doc": "WIRING.md"
   },
 
-  "tags": ["anonymisierung", "datenschutz", "pseudonymisierung", "klienten", "foerderplanung", "privat"]
+  "tags": ["anonymisierung", "datenschutz", "pseudonymisierung", "klienten", "foerderplanung"]
 }

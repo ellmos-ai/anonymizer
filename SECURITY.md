@@ -1,7 +1,7 @@
 # Security and privacy policy
 
-`anonymizer` verarbeitet besonders schützenswerte lokale Daten. Das Modul ist
-privat und Version 0.2.0 ist der einzige aktuell gewartete Stand.
+`anonymizer` verarbeitet besonders schützenswerte lokale Daten. Version 0.2.1
+ist der einzige aktuell gewartete Stand.
 
 ## Meldung
 

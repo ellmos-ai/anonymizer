@@ -36,7 +36,8 @@ Optionale Abhängigkeiten (pip install ...):
   pikepdf        — PDF-AES-256-Verschlüsselung
   openpyxl       — Excel-Anonymisierung
 
-Version: 0.2.0 (Sicherheits- und Datenschutz-Härtung 2026-07-16)
+Version: 0.2.1 (defusedxml-Härtung 2026-07-23; Basis: 0.2.0 Sicherheits- und
+Datenschutz-Härtung 2026-07-16)
 Copyright (c) 2026 ellmos / BACH Contributors — MIT License
 """
 
@@ -54,7 +55,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from xml.etree import ElementTree
+from defusedxml import ElementTree
 
 
 # Authentifizierte Schlüsselverschlüsselung
@@ -2364,7 +2365,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     import argparse
     import getpass
 
-    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.0")
+    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.1")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("self-test", aliases=["test"], help="lokalen Selbsttest ausführen")
 

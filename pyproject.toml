@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anonymizer-modul"
-version = "0.2.0"
-description = "PRIVAT: Fail-closed Standalone-Anonymizer für personenbezogene Dokumente"
+version = "0.2.1"
+description = "Fail-closed Standalone-Anonymizer für personenbezogene Dokumente"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -13,7 +13,7 @@ authors = [
     {name = "ellmos / BACH Contributors"}
 ]
 
-dependencies = ["cryptography>=41.0"]
+dependencies = ["cryptography>=41.0", "defusedxml>=0.7"]
 
 [project.optional-dependencies]
 docx  = ["python-docx>=1.0"]

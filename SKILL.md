@@ -1,6 +1,6 @@
 ---
 name: anonymizer
-version: "0.2.0"
+version: "0.2.1"
 type: standalone-module
 standalone: true
 visibility: private
@@ -79,5 +79,6 @@ os.environ["ANONYMIZER_HOME"] = r"C:\_Local_Anon\output"
 
 | Version | Datum | Änderung |
 |---|---|---|
+| 0.2.1 | 2026-07-23 | defusedxml-Härtung (OOXML-Parsing), Git/CI/Legal-Gates für Public-Vorbereitung |
 | 0.2.0 | 2026-07-16 | Privacy-/Security-Härtung, transaktionale Ausgabe, Format-Restdatenkontrollen, reale CLI |
 | 0.1.0 | 2026-06-27 | Extraktion aus BACH hub v1.2.0; BACH-Pfadbezüge neutralisiert |

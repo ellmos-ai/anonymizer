@@ -273,16 +273,30 @@ class TestDetectionBoundary(unittest.TestCase):
     def test_harden_run_surface_drops_contraction_regardless_of_pos(self):
         """0.2.5a (RUN5-Nachbefund, modellversions-robust): Praeposition-
         Artikel-Kontraktionen wie "Beim" werden per Oberflaechen-
-        Exaktvergleich gekuerzt -- unabhaengig vom POS-Tag. Notwendig, weil
+        Exaktvergleich gekuerzt -- unabhaengig vom POS-Tag UND unabhaengig
+        davon, ob ueberhaupt ein spaCy-Modell geladen ist (reiner
+        Stringvergleich, keine vocab-/is_oov-Abhaengigkeit). Notwendig, weil
         ein zusaetzlich installiertes en_core_web_lg deutsche Praepositionen
         teils selbst als PROPN taggt und die 0.2.2-0.2.4-Verteidigung
-        (POS/Lemma) dadurch umgangen wird."""
+        (POS/Lemma) dadurch umgangen wird.
+
+        Zweites Token bewusst "Kim" (3 Zeichen, unter der Mindestlaenge des
+        modellabhaengigen Alltagswort-Checks c) -- damit das Ergebnis in
+        JEDER Umgebung deterministisch ist, auch OHNE geladenes Modell (CI
+        installiert keines): der Kontraktions-Drop selbst darf davon nicht
+        abhaengen."""
         tokens = [
             FakeToken("Beim", pos="PROPN", lemma="Beim", idx=0),
-            FakeToken("Anziehen", pos="PROPN", lemma="Anziehen", idx=5, ws=""),
+            FakeToken("Kim", pos="PROPN", lemma="Kim", idx=5, ws=""),
         ]
         runs = core._harden_run_surface(tokens)
-        self.assertEqual(runs, [])
+        self.assertEqual(
+            [core._tokens_to_name_text(run_tokens) for run_tokens, _ in runs],
+            ["Kim"],
+        )
+        # "Beim" darf in KEINEM verbleibenden Lauf auftauchen.
+        surviving_texts = {tok.text for run_tokens, _ in runs for tok in run_tokens}
+        self.assertNotIn("Beim", surviving_texts)
 
     def test_harden_run_surface_drops_generic_stem_by_surface_prefix(self):
         """0.2.5b: Gattungsbegriff-Denyliste greift auch ohne Lemma ueber

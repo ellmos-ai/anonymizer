@@ -49,6 +49,20 @@
 - **README-Abschnitt "Modellversions-Sensitivität"** ergänzt: empfohlene/
   getestete Version (`de_core_news_lg==3.8.0`, `spacy==3.8.14`), Hinweis zum
   `en_core_web_lg`-Risiko, Versions-Pin als Kommentar in `pyproject.toml`.
+- **CI-Nachbesserung (Testfehler, keine Verhaltensänderung):** GitHub Actions
+  (kein spaCy-Modell installiert) schlug bei
+  `test_harden_run_surface_drops_contraction_regardless_of_pos` fehl. Ursache
+  war NICHT ein "Fail-open" der Kontraktions-/Denyliste-Schichten (a)/(b) —
+  diese sind bereits rein oberflächenbasiert und vollständig modellfrei
+  (kein `_get_spacy_model`-Zugriff) — sondern eine zu weit gefasste
+  Testerwartung, die implizit voraussetzte, dass Schicht (c) (is_oov,
+  modellabhängig, korrekt geguarded: ohne Modell → übersprungen) das zweite
+  Token ebenfalls entfernt. Test korrigiert (zweites Token unter der
+  Mindestlänge von Schicht (c), damit die Erwartung in JEDER Umgebung
+  deterministisch ist) und in drei Kontexten verifiziert: eigene venv (70
+  passed/3 skipped), System-Python mit `en_core_web_lg` (71 passed/2
+  skipped), frische modellfreie venv als echte CI-Nachbildung (64 passed/9
+  skipped, davon 7 korrekt übersprungene modellabhängige Tests).
 
 ## 0.2.4 — 2026-07-23
 

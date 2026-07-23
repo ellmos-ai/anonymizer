@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anonymizer-modul"
-version = "0.2.3"
+version = "0.2.4"
 description = "Fail-closed Standalone-Anonymizer für personenbezogene Dokumente"
 readme = "README.md"
 license = "MIT"

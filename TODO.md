@@ -1,6 +1,6 @@
 # TODO — anonymizer
 
-Stand: 2026-07-23, Version 0.2.3
+Stand: 2026-07-23, Version 0.2.4
 
 ## Status
 
@@ -75,6 +75,25 @@ worksheet-generator + Berichts-Kern)
 
 ## Erledigt
 
+- [x] 2026-07-23: **RUN4-Feinschliff — Mehrwort-Span-Härtung (0.2.4):** Das
+  0.2.3-Anker-Prinzip griff für Einzelwort-Spans, aber Mehrwort-Spans
+  umgingen es: "Beim Anziehen"/"Beim Essen" (substantivierte Verben) und
+  "Landkreises Lörrach" (Genitiv, Gattungsbegriff+Eigenname im selben
+  Span) wurden über die "≥2 Tokens = verifiziert"-Regel trotzdem ersetzt.
+  `_is_name_token()` prüft bei PROPN-Tokens jetzt zusätzlich das LEMMA:
+  Gattungsbegriff-Lemma ("Landkreis") oder kleingeschriebenes Lemma
+  (substantivierte Verben behalten ihr Infinitiv-Lemma, "Anziehen" →
+  "anziehen") → Token wird aus dem Span gekürzt, bevor die Mehrwort-/
+  Anker-Logik greift. DoD verifiziert: pytest mit geladenem
+  `de_core_news_lg` — 65 passed, 2 skipped (beide Windows-Symlink-OS,
+  kein Modell-Test übersprungen), 14 subtests. End-to-End gegen die echte
+  RUN2-Akte: Profil-Mapping exakt {Kim, Beispiel, Kim Beispiel,
+  Test-Fiktiv, Test-Mustermann, Sachbearbeiter-Fiktiv}. Neue Tests:
+  `test_multiword_span_trims_generic_lemma_before_acceptance`,
+  `test_multiword_span_trims_substantivized_verb_before_acceptance`
+  (`tests/test_security_boundaries.py`); Positivfall "Anna
+  Muster-Bergmann" (Bindestrich-Doppelname) ergänzt in
+  `test_ner_run2_regression_positive_names_still_detected`.
 - [x] 2026-07-23: **Referenzlauf-Fund A behoben (Template-Medien-Blocker):**
   DOCX/XLSX-Vorlagen mit eingebetteten Bildern (Briefkopf/Logo) ließen sich
   nie de-anonymisieren, weil `DocumentDeanonymizer.deanonymize_file` intern

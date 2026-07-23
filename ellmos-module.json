@@ -2,7 +2,7 @@
   "$schema": "ellmos-module-v1",
   "name": "anonymizer",
   "display_name": "Anonymizer",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "kind": "standalone-module",
   "visibility": "public-candidate",
   "description": "Fail-closed Pseudonymisierung personenbezogener Dokumente (Text, DOCX, PDF, XLSX) mit lokaler authentifiziert verschlüsselter Schlüsselspeicherung.",

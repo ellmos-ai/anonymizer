@@ -1,6 +1,6 @@
 # anonymizer — Standalone-Modul
 
-`anonymizer` 0.2.3 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
+`anonymizer` 0.2.4 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
 Das Modul verarbeitet sensible personenbezogene Daten ausschließlich lokal;
 Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
 „Rechtlicher Rahmen und Verantwortung" weiter unten.

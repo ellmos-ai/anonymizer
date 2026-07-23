@@ -36,9 +36,10 @@ Optionale Abhängigkeiten (pip install ...):
   pikepdf        — PDF-AES-256-Verschlüsselung
   openpyxl       — Excel-Anonymisierung
 
-Version: 0.2.3 (Anker-Prinzip gegen NER-Overblocking 2026-07-23; Basis:
-0.2.2 POS/Lemma-Span-Validierung, 0.2.1 defusedxml-Härtung, 0.2.0
-Sicherheits- und Datenschutz-Härtung 2026-07-16)
+Version: 0.2.4 (Mehrwort-Span-Härtung gegen Gattungsbegriffe/
+substantivierte Verben 2026-07-23; Basis: 0.2.3 Anker-Prinzip, 0.2.2
+POS/Lemma-Span-Validierung, 0.2.1 defusedxml-Härtung, 0.2.0 Sicherheits-
+und Datenschutz-Härtung 2026-07-16)
 Copyright (c) 2026 ellmos / BACH Contributors — MIT License
 """
 
@@ -916,6 +917,17 @@ def _is_name_token(token) -> bool:
     Substantiv wird grossgeschrieben. Die Wortart (POS) ist das eigentliche
     Unterscheidungsmerkmal zwischen einem Eigennamen und einem generischen
     Substantiv/Verb/etc., das NER faelschlich in denselben Span zieht.
+
+    Mehrwort-Span-Haertung (0.2.4, RUN4-Nachbefund): reines PROPN-Tagging
+    erwies sich zusaetzlich als durchlaessig bei substantivierten Verben
+    ("Beim Anziehen") und Gattungsbegriffen ("Landkreises Loerrach"), die
+    im jeweiligen Kontext dennoch als PROPN getaggt wurden. Als Gegenprobe
+    zaehlt daher auch bei PROPN-Tag das LEMMA: substantivierte Verben
+    behalten ihr kleingeschriebenes Infinitiv-Lemma ("Anziehen" -> Lemma
+    "anziehen"), waehrend deutsche Substantive/Eigennamen grossgeschrieben
+    lemmatisiert werden ("Landkreises" -> "Landkreis") -- ein Kleinbuchstabe
+    am Lemma-Anfang oder ein Lemma auf der Gattungsbegriff-Denyliste
+    disqualifiziert das Token trotz PROPN-Tag.
     """
     text = token.text.strip(".,;:!?()[]{}\"'")
     if not text:
@@ -925,14 +937,23 @@ def _is_name_token(token) -> bool:
     core = text.strip("-")
     if not core:
         return False
-    if getattr(token, "pos_", None) == "PROPN":
-        return True
     lower = core.lower()
     if lower in _NER_TITLE_TOKENS:
         return True
     if lower in _NER_KNOWN_FIRST_NAMES:
         return True
-    return False
+    if getattr(token, "pos_", None) != "PROPN":
+        return False
+    lemma = getattr(token, "lemma_", None) or token.text
+    lemma_clean = lemma.strip(".,;:!?()[]{}\"'-")
+    if not lemma_clean:
+        return False
+    lemma_lower = lemma_clean.lower()
+    if lemma_lower in _NER_GENERIC_ROLE_NOUNS or lemma_lower in _NER_GENERIC_REPORT_NOUNS:
+        return False
+    if lemma_clean[0].islower():
+        return False
+    return True
 
 
 def _extract_name_token_runs(ent, doc_preceding_token=None) -> List[Tuple[list, object]]:
@@ -2696,7 +2717,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     import argparse
     import getpass
 
-    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.3")
+    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.4")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("self-test", aliases=["test"], help="lokalen Selbsttest ausführen")
 

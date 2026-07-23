@@ -1,6 +1,6 @@
-# Release Gate — anonymizer 0.2.3
+# Release Gate — anonymizer 0.2.4
 
-Stand: 2026-07-23 (vorherige Fassungen: 0.2.2, 0.2.1 und 0.2.0/2026-07-16)
+Stand: 2026-07-23 (vorherige Fassungen: 0.2.3, 0.2.2, 0.2.1 und 0.2.0/2026-07-16)
 
 ## Entscheidung
 
@@ -25,8 +25,12 @@ Fachtext-Kontexten häufig als PROPN. 0.2.3 ersetzt das durch das
 Anker-Prinzip (Operator-Design): Mehrwort-NER-Spans gelten als verifiziert,
 Einzelwort-Spans brauchen einen Anker (Lexikon-Vorname oder vorangehendes
 Titel-/Anrede-Token) — ohne Anker keine destruktive Ersetzung, stattdessen
-sichtbarer, nicht-destruktiver Review-Kandidat. Gegen die echte
-RUN2-Referenzakte end-to-end verifiziert (siehe Prüfgates unten).
+sichtbarer, nicht-destruktiver Review-Kandidat. RUN4 zeigte einen
+verbleibenden Feinschliff: Mehrwort-Spans umgingen das Anker-Prinzip noch
+("Beim Anziehen", "Landkreises Lörrach"). 0.2.4 kürzt Gattungsbegriff-/
+Verb-Lemma-Tokens (per Lemma-Gegenprobe) aus jedem Span, BEVOR die
+Mehrwort-/Anker-Logik greift. Gegen die echte RUN2-Referenzakte end-to-end
+verifiziert (siehe Prüfgates unten).
 
 Der fehlende OCR-Workflow für bildhaltige Inhalte bleibt ein bewusster,
 dokumentierter Funktionsausschluss (fail-closed), kein offenes Gate. Die
@@ -39,18 +43,18 @@ Ankündigung) ist ein separater, vom Operator zu treffender Schritt
 | Gate | Ergebnis |
 |---|---|
 | Syntax/Import | grün — `py_compile` für Core und Schutztests |
-| Vollständige Testsuite | grün — 63 bestanden, 2 OS-Skips (Windows-Symlinks, KEIN Modell-Test übersprungen), 12 Subtests (Stand 0.2.3, mit geladenem `de_core_news_lg` verifiziert) |
-| Schutz-PoCs / alternative Eingaben | grün — Schutztests: OOXML-Attribute/Charts, NER (Lemma-Denyliste + POS-Struktur + Anker-Prinzip), Casing, PDF-TOC, Reparse, Template-Medien-Allowlist und atomare Veröffentlichung |
+| Vollständige Testsuite | grün — 65 bestanden, 2 OS-Skips (Windows-Symlinks, KEIN Modell-Test übersprungen), 14 Subtests (Stand 0.2.4, mit geladenem `de_core_news_lg` verifiziert) |
+| Schutz-PoCs / alternative Eingaben | grün — Schutztests: OOXML-Attribute/Charts, NER (Lemma-Denyliste + POS-Struktur + Anker-Prinzip + Mehrwort-Lemma-Trim), Casing, PDF-TOC, Reparse, Template-Medien-Allowlist und atomare Veröffentlichung |
 | CLI | grün — UTF-8-Selbsttest und installierte Wheel-Hilfe mit echten Unterbefehlen |
 | Build und Archivinhalt | grün — isolierter sdist-/Wheel-Bau; keine Locks, Backups, Caches oder Bytecode im Wheel |
-| Paketprüfung | grün (Stand 0.2.0; für 0.2.1–0.2.3 nicht erneut gebaut) — `pip check`; Twine auf diesem Host nicht installiert |
-| Modulmanifeste | grün — gültiges JSON (`ellmos-module.json`/`.v2.json` auf 0.2.3 aktualisiert) |
+| Paketprüfung | grün (Stand 0.2.0; für 0.2.1–0.2.4 nicht erneut gebaut) — `pip check`; Twine auf diesem Host nicht installiert |
+| Modulmanifeste | grün — gültiges JSON (`ellmos-module.json`/`.v2.json` auf 0.2.4 aktualisiert) |
 | Unabhängiger Schlussreview | grün — 0×P0/P1/release-relevante P2 (0.1.0→0.2.0) |
 | Git-Repository + CI | grün seit 2026-07-23 — Branch `main`, `.github/workflows/ci.yml` (Python 3.11/3.12 auf ubuntu-latest: Tests, Lint, Bandit) |
 | Bandit (`bandit -r anonymizer_modul -ll`) | grün — 0 Medium/High nach defusedxml-Härtung (zuvor 3× Medium/B314) |
 | Realer NER-Modelltest | grün — `de_core_news_lg`, 7/10 synthetische Namen erkannt (dokumentiert in `TODO.md`) |
 | Template-Medien-Allowlist | grün seit 2026-07-23 — `trusted_template_path` (API/CLI/ENV), SHA-256-Hash-Verifikation gegen Referenz-Template |
-| NER-Anker-Prinzip (0.2.3) | grün — End-to-End-Realcheck gegen die echte RUN2-Akte: kein Fehlklassen-Token ("Grob", "Umgang", "Klettverschlüsse", "Landkreises", "Einrichtungsangaben", "Begleitung", "Handlauf", "Zähneputzen") in Scan, Profil-Mapping oder anonymisierter Ausgabe; Klientenname vollständig ersetzt |
+| NER-Anker-Prinzip + Mehrwort-Härtung (0.2.3/0.2.4) | grün — End-to-End-Realcheck gegen die echte RUN2-Akte: kein Fehlklassen-Token ("Grob", "Umgang", "Klettverschlüsse", "Landkreises", "Einrichtungsangaben", "Begleitung", "Handlauf", "Zähneputzen", "Anziehen", "Essen") in Scan, Profil-Mapping oder anonymisierter Ausgabe; Profil-Mapping exakt {Kim, Beispiel, Kim Beispiel, Test-Fiktiv, Test-Mustermann, Sachbearbeiter-Fiktiv} |
 | README Legal-/DSGVO-Abschnitt | grün seit 2026-07-23 — „Rechtlicher Rahmen und Verantwortung" (DSGVO, § 203 StGB, englische Kurzfassung) |
 | Öffentliche Sichtbarkeit (Push/Release) | ausstehend — Operator-Entscheidung, kein Tech-Gate |
 
@@ -66,7 +70,7 @@ Ankündigung) ist ein separater, vom Operator zu treffender Schritt
   POS-/Anker-basierten Regressionstests sind entsprechend nur gegen
   `de_core_news_lg` skip-guarded verifiziert; CI installiert das Modell
   nicht, diese Tests laufen daher nur lokal/mit installiertem Modell.
-- Twine, Signierung und ein erneuter Wheel-Bau für 0.2.3 stehen lokal noch
+- Twine, Signierung und ein erneuter Wheel-Bau für 0.2.4 stehen lokal noch
   aus und sind kein Blocker für dieses Tech-Gate.
 - Der NER-Filter bleibt eine Heuristik (POS-Tagging + Anker + Denyliste),
   kein 100%-Garant. Unentdeckte Drittpersonen-Einzelworte ohne Anker landen

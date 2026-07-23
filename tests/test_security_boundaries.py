@@ -236,6 +236,40 @@ class TestDetectionBoundary(unittest.TestCase):
             fake_tokens(("Umgang", "NOUN")), preceding_token=FakeToken("dem", pos="DET")
         ))
 
+    def test_multiword_span_trims_generic_lemma_before_acceptance(self):
+        """0.2.4-Haertung (RUN4-Nachbefund): reines PROPN-Tagging war auch
+        bei Mehrwort-Spans durchlaessig -- "Landkreises Loerrach" wurde
+        trotz PER-Label mit uebernommen, wenn beide Tokens (fehlerhaft)
+        PROPN getaggt waren. Simuliert genau diesen Worst Case direkt auf
+        Token-Ebene (unabhaengig von spaCys tatsaechlicher Kontext-Laune):
+        das Gattungsbegriff-Token "Landkreises" (Lemma "Landkreis", auf der
+        Denyliste) wird aus dem Span GEKUERZT, der Rest ("Loerrach") bleibt
+        als Einzeltoken uebrig und braucht seinerseits einen Anker."""
+        tokens = [
+            FakeToken("Landkreises", pos="PROPN", lemma="Landkreis", idx=0),
+            FakeToken("Loerrach", pos="PROPN", lemma="Loerrach", idx=12, ws=""),
+        ]
+        runs = core._extract_name_token_runs(FakeEnt(tokens))
+        self.assertEqual(
+            [core._tokens_to_name_text(run_tokens) for run_tokens, _preceding in runs],
+            ["Loerrach"],
+        )
+        # Als Einzeltoken ohne Vornamen-/Titel-Anker: kein Ersatz.
+        run_tokens, preceding = runs[0]
+        self.assertFalse(core._run_has_anchor(run_tokens, preceding))
+
+    def test_multiword_span_trims_substantivized_verb_before_acceptance(self):
+        """0.2.4-Haertung: substantivierte Verben ("Anziehen") behalten ihr
+        kleingeschriebenes Infinitiv-Lemma auch wenn sie (fehlerhaft) als
+        PROPN getaggt werden -- werden trotz PROPN-Tag aus dem Span
+        gekuerzt. "Beim Anziehen" darf so nie als Name durchgehen."""
+        tokens = [
+            FakeToken("Beim", pos="ADP", lemma="bei", idx=0),
+            FakeToken("Anziehen", pos="PROPN", lemma="anziehen", idx=5, ws=""),
+        ]
+        runs = core._extract_name_token_runs(FakeEnt(tokens))
+        self.assertEqual(runs, [])
+
     @unittest.skipUnless(
         core.SPACY_AVAILABLE and core._get_spacy_model("de_core_news_lg") is not None,
         "de_core_news_lg model required for the real NER regression",
@@ -254,13 +288,18 @@ class TestDetectionBoundary(unittest.TestCase):
             "grob", "umgang", "klettverschlüsse", "klettverschluesse",
             "landkreises", "einrichtungsangaben", "förderung", "foerderung",
             "zusage", "ablauf", "gegenständen", "gegenstaenden",
-            "schwierigkeiten",
+            "schwierigkeiten", "anziehen", "essen", "zähneputzen",
+            "zaehneputzen", "begleitung", "handlauf",
         }
         texts = [
             "Grob bewegt Kim sich altersgemäß, beim Umgang mit kleinen "
             "Gegenständen mit den Fingern braucht Kim noch etwas "
             "Unterstützung.",
             "Beim Anziehen gelingt es Kim, Klettverschlüsse selbst zu öffnen.",
+            "Beim Essen kommt Kim allein zurecht, beim Zähneputzen braucht "
+            "Kim noch verbale Hinweise.",
+            "Frau Lena Lindner bestätigt, dass die Bewilligung des "
+            "fiktiven Landkreises Lörrach noch bis zum 31.08.2026 gilt.",
             "Beim Essen kommt Kim allein zurecht.",
             "Kim hat noch Schwierigkeiten bei Knöpfen und Reißverschlüssen.",
             "Alle Namen, Daten und Einrichtungsangaben in diesem Bericht sind fiktiv.",
@@ -302,6 +341,11 @@ class TestDetectionBoundary(unittest.TestCase):
         # ueber das Anker-Prinzip BESTAETIGT (nicht nur Review) sein.
         confirmed, _ = core.detect_person_names_ner("Amara Diallo wurde vorgestellt.")
         self.assertIn("Amara Diallo", confirmed)
+        # 0.2.4: Bindestrich-Doppelname darf durch die neue Mehrwort-
+        # Haertung NICHT zerkuerzt werden (kein Gattungsbegriff, kein
+        # substantiviertes Verb -- beide Teile sind echte PROPN-Nachnamen).
+        confirmed, _ = core.detect_person_names_ner("Anna Muster-Bergmann wurde vorgestellt.")
+        self.assertIn("Anna Muster-Bergmann", confirmed)
 
     @unittest.skipUnless(
         core.SPACY_AVAILABLE and core._get_spacy_model("de_core_news_lg") is not None,

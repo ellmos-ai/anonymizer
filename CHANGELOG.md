@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.2.4 — 2026-07-23
+
+- **Mehrwort-Span-Härtung (Referenzlauf RUN4, Feinschliff zu 0.2.3):** Das
+  Anker-Prinzip griff bereits korrekt für Einzelwort-Spans, aber
+  Mehrwort-Spans umgingen es weiterhin: „Beim Anziehen"/„Beim Essen"
+  (substantivierte Verben, teils fälschlich als PROPN getaggt) und
+  „Landkreises Lörrach" (Genitiv, Gattungsbegriff + Eigenname im selben
+  Span) wurden über die bisherige „≥2 Tokens = verifiziert"-Regel trotzdem
+  ersetzt.
+- **Trim VOR der Mehrwort-Akzeptanz (Operator-Design):** `_is_name_token()`
+  prüft bei PROPN-getaggten Tokens jetzt zusätzlich das LEMMA als
+  Gegenprobe: (a) Tokens, deren Lemma auf der Gattungsbegriff-Denyliste
+  steht (Lemma von „Landkreises" ist „Landkreis"), werden aus dem Span
+  gekürzt; (b) Tokens mit kleingeschriebenem Lemma — substantivierte
+  Verben behalten ihr Infinitiv-Lemma, z. B. „Anziehen" → Lemma
+  „anziehen" — werden ebenfalls gekürzt. Der gekürzte Rest durchläuft die
+  normale Logik: ≥2 Tokens → weiterhin verifiziert, 1 Token → Anker-Regel
+  (0.2.3), 0 Tokens → nichts. „Landkreises Lörrach" wird so zu „Lörrach"
+  ohne Vornamen-/Titel-Anker → `ner_review_only` statt Ersetzung.
+  Bindestrich-Doppelnamen („Anna Muster-Bergmann") bleiben unangetastet,
+  da beide Teile echte PROPN-Nachnamen ohne Gattungsbegriff-/Verb-Lemma
+  sind.
+- **DoD verifiziert:** pytest mit geladenem `de_core_news_lg` — 65 passed,
+  2 skipped (beide Windows-Symlink-OS-Limitationen, kein Modell-Test
+  übersprungen), 14 subtests. End-to-End gegen die echte RUN2-Akte: das
+  Profil-Namens-Mapping ist exakt {Kim, Beispiel, Kim Beispiel,
+  Test-Fiktiv, Test-Mustermann, Sachbearbeiter-Fiktiv} — die tatsächlichen
+  Personen im Text, keine Fehlklasse mehr darunter.
+
 ## 0.2.3 — 2026-07-23
 
 - **Regression zu 0.2.2 (ehrlich dokumentiert):** Referenzlauf RUN3 mit der

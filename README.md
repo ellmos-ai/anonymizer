@@ -1,6 +1,20 @@
 # anonymizer — Standalone-Modul
 
-`anonymizer` 0.2.5 pseudonymisiert lokale Dokumente ohne BACH-Laufzeitimport.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](pyproject.toml)
+[![Security: Fail--Closed](https://img.shields.io/badge/Security-Fail--Closed-red.svg)](RELEASE_GATE.md)
+[![GDPR / DSGVO: Art. 4(5)](https://img.shields.io/badge/DSGVO-Art._4%285%29_Pseudonymisierung-green.svg)](#rechtlicher-rahmen-und-verantwortung)
+
+`anonymizer` 0.2.5 pseudonymisiert lokale Dokumente (`.txt`, `.md`, `.docx`, `.xlsx`, `.pdf`) vollständig lokal und ohne Cloud-Abhängigkeit.
+
+| Feature | Beschreibung |
+|---|---|
+| **Lokale Sicherheit** | Authentifizierte Key-Verschlüsselung (Fernet + PBKDF2), Fail-closed Publikationsvertrag |
+| **Formate** | DOCX (inkl. OOXML, Tabellen, Header/Footer), XLSX, PDF, TXT, MD |
+| **Namenerkennung** | spaCy-basierte NER (POS==PROPN) + Anker-Validierung & Modellversions-Härtung |
+| **Templates** | Hash-verifizierte Referenztemplates für Logos & Briefköpfe ohne Pauschalfreigabe |
+| **Crawler-Ready** | Maschinenlesbares `llms.txt` für KI-Agenten & Discovery im Root hinterlegt |
+
 Das Modul verarbeitet sensible personenbezogene Daten ausschließlich lokal;
 Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
 „Rechtlicher Rahmen und Verantwortung" weiter unten.

@@ -9,9 +9,25 @@ description = "Fail-closed Standalone-Anonymizer für personenbezogene Dokumente
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-authors = [
-    {name = "ellmos / BACH Contributors"}
+keywords = [
+    "anonymizer",
+    "pseudonymization",
+    "gdpr",
+    "dsgvo",
+    "ner",
+    "spacy",
+    "pdf-redaction",
+    "docx-anonymization",
+    "privacy-first",
+    "fail-closed",
+    "offline-first"
 ]
+
+[project.urls]
+Homepage = "https://github.com/ellmos-ai/anonymizer"
+Documentation = "https://github.com/ellmos-ai/anonymizer#readme"
+Repository = "https://github.com/ellmos-ai/anonymizer.git"
+"Issue Tracker" = "https://github.com/ellmos-ai/anonymizer/issues"
 
 dependencies = ["cryptography>=41.0", "defusedxml>=0.7"]
 

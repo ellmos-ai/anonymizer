@@ -1,0 +1,98 @@
+# anonymizer
+
+> Standalone, fail-closed Python module for local-first document pseudonymization (DOCX, XLSX, PDF, TXT, MD) with authenticated key encryption and spaCy-based Named Entity Recognition (NER).
+
+Canonical repository: https://github.com/ellmos-ai/anonymizer
+License: MIT
+Language: Python
+Runtime: Python >= 3.10
+
+## Summary
+
+`anonymizer` is a local-first Python library and CLI tool designed for strict, privacy-preserving document pseudonymization. Extracted from the BACH ecosystem, it processes sensitive personal data entirely offline, eliminating cloud leaks and unauthorized data sharing.
+
+Key Capabilities:
+1. **Multi-Format Document Support**: Native handling of `.txt`, `.md`, `.docx` (including OOXML parts, headers, footers, charts), `.xlsx` (sheets, comments, metadata), `.pdf` (text redaction & metadata stripping), and `.doc` (safe text extraction).
+2. **Fail-Closed Security Contract**: If unverified files, parser errors, symlinks, or leftover sensitive traces are detected, `anonymize_folder()` halts publication completely — preventing partial leaks.
+3. **Authenticated Encryption**: Keyfiles are encrypted using Fernet with PBKDF2-HMAC-SHA256 password derivation. Key storage inside cloud-synced folders is explicitly blocked.
+4. **spaCy NER with Structural POS & Anchor Guards**: Automatic PER name detection incorporates Part-of-Speech tagging (PROPN) and Anchor verification (Lexicon check / honorific titles) to prevent false-positive destruction of generic terms.
+5. **Model-Version & Surface Hardening**: Hardened against cross-language model contamination (e.g. `en_core_web_lg`) and spaCy tag shifts with strict surface-level contraction and stopword filtering.
+6. **Trusted Template Workflow**: Allows embedded images/media in `.docx`/`.xlsx` templates (e.g., official letterhead logos) via byte-level SHA-256 hash matching against a verified template reference.
+
+## CLI Usage
+
+```powershell
+# Self-test diagnostic
+anonymizer self-test
+
+# Anonymize folder
+anonymizer anonymize C:\Input\Folder C:\Output\K_ABC123
+
+# Deanonymize folder with keyfile
+anonymizer deanonymize C:\Output\K_ABC123 C:\Keys\K_ABC123.schluessel.enc C:\Restored\Folder
+
+# Using trusted template for logo-containing DOCX/XLSX
+anonymizer anonymize --trusted-template C:\Templates\letterhead.docx C:\Input\Folder C:\Output\K_ABC123
+```
+
+## Python API Example
+
+```python
+import os
+from anonymizer_modul import DocumentAnonymizer
+
+os.environ["ANONYMIZER_KEYS_DIR"] = r"C:\_Local_Anon\keys"
+
+anonymizer = DocumentAnonymizer()
+scanned = anonymizer.scan_folder_for_sensitive_data(r"C:\Input\CaseFolder")
+profile = anonymizer.create_profile(
+    real_name="Sample Name",
+    geburtsdatum="15.03.2016",
+    scanned_data=scanned,
+)
+result = anonymizer.anonymize_folder(
+    folder=r"C:\Input\CaseFolder",
+    profile=profile,
+    password="strong-local-password",
+    output_folder=r"C:\Output\K_ABC123",
+)
+if result.errors:
+    raise RuntimeError("Anonymization failed security publication contract")
+```
+
+## Audience
+
+- Local-first developers, privacy engineers, and healthcare/education professionals processing confidential documents (DOCX, PDF, XLSX).
+- AI agent developers requiring pre-cleared, pseudonymized text inputs before sending prompts to external LLMs.
+- Compliance and security officers looking for fail-closed, offline document redaction tools under GDPR Art. 4(5).
+
+## Search Phrases
+
+```
+fail-closed document anonymizer python
+local-first docx pdf xlsx pseudonymization
+spacy ner named entity recognition privacy tool
+dsgvo art 4 5 pseudonymisierung python
+docx header footer ooxml text redaction
+fernet encrypted keyfile document anonymization
+offline-first sensitive data scrubber python
+ellmos anonymizer python
+```
+
+## External Discovery Notes
+
+- Maintained under the `ellmos-ai` GitHub organization.
+- Differentiates by strict all-or-nothing publication contracts, fail-closed NER, surface-level POS/anchor validation, and zero external cloud dependencies.
+- Ideal discovery anchors: privacy-first AI pipelines, GDPR document scrubbing, fail-closed NER pseudonymization, local LLM pre-processing.
+
+## Important Files
+
+- `README.md`: English/German main documentation.
+- `README_de.md`: German localization overview.
+- `RELEASE_GATE.md`: Security and release verification gate.
+- `SECURITY.md`: Security model and vulnerability boundaries.
+- `SECURITY_REVIEW_2026-07-16.md`: Detailed privacy and security review.
+- `WIRING.md`: Integration & system boundary documentation.
+- `pyproject.toml`: Package dependencies and entry points.
+
+## Last-checked: 2026-07-24

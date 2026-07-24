@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-24 — Discoverability & Doku
+
+- **Maschinenlesbare Dokumentation (`llms.txt`):** Root-`llms.txt` angelegt für KI-Crawler, Agent-Discovery und strukturierte Übersicht der Fail-Closed-Sicherheitsverträge, Formate und CLI-/Python-APIs.
+- **PyPI / GitHub Discovery Metadata:** Keywords (`anonymizer`, `pseudonymization`, `gdpr`, `dsgvo`, `ner`, `spacy`, `privacy-first`, `fail-closed`, `offline-first`) und `[project.urls]` in `pyproject.toml` hinterlegt.
+- **README & Doku-Struktur:** Badges, Schnellübersichts-Tabellen und Suchbegriffe für maschinelles und menschliches Auffinden optimiert.
+
 ## 0.2.5 — 2026-07-23
 
 - **Root Cause identifiziert (Referenzlauf RUN5, w6-Umgebungsvergleich):**

@@ -44,7 +44,12 @@ jobs:
           python-version: "3.12"
 
       - name: Install lint tooling
-        run: python -m pip install --upgrade pip ruff
+        # ruff bewusst gepinnt: ungepinnt zieht der Job jede neue ruff-Version,
+        # und ruff nimmt in Minor-Releases neue Regeln in den Default-Regelsatz
+        # auf. 0.16.0 hat den Lint am 2026-07-24 so ohne Code-Aenderung rot
+        # gemacht (161 Treffer, v. a. UP006/UP045/I001-Modernisierung).
+        # Anhebung bewusst und zusammen mit den faelligen Fixes vornehmen.
+        run: python -m pip install --upgrade pip "ruff==0.15.17"
 
       - name: Ruff check
         run: ruff check .

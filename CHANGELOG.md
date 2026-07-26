@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-26 — Technische Hygiene & Maintenance
+
+- **Testkonfiguration & Isolation (`pyproject.toml`):** `pythonpath = ["."]` in `[tool.pytest.ini_options]` hinterlegt für umgebungsunabhängiges Ausführen der Testsuite.
+- **Maschinenlesbare Dokumentation (`llms.txt`):** `Last-checked` Zeitstempel auf 2026-07-26 aktualisiert mit verifizierten Testsuite-Ergebnissen (64 passed, 9 skipped).
+- **Testsuite & CI Verification:** Vollständige Testsuite in isolierter Umgebung ausgeführt (64 passed, 9 skipped in 7.04s), 0 Fehler.
+
 ## 2026-07-24 — Discoverability & Doku
 
 - **Maschinenlesbare Dokumentation (`llms.txt`):** Root-`llms.txt` angelegt für KI-Crawler, Agent-Discovery und strukturierte Übersicht der Fail-Closed-Sicherheitsverträge, Formate und CLI-/Python-APIs.

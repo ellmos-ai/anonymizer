@@ -62,6 +62,7 @@ where = ["."]
 include = ["anonymizer_modul*"]
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 testpaths = ["tests"]
 
 [tool.ruff]

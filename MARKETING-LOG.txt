@@ -1,0 +1,24 @@
+# MARKETING-LOG.txt — Recommendations & External Visibility Strategy
+
+## Repository: ellmos-ai/anonymizer
+
+### Automated Action Completed (2026-07-27)
+- **Shields.io Badges**: Integrated badges for `LLM-Ready: llms.txt`, `Ecosystem: ELLMOS / open-bricks`, and `Hygiene Checked: 2026-07-27`.
+- **AI Agent Callout**: Added GFM `> [!NOTE]` callout for machine-readable discovery (`llms.txt`) and offline pre-processing boundary for LLM pipelines.
+- **Mermaid Architecture Diagram**: Added interactive Mermaid diagram visualizing the fail-closed anonymization pipeline, spaCy-NER, anchor verification, and Fernet encryption.
+- **Machine-Readable Metadata**: Updated `llms.txt` header/footer with `Last-checked: 2026-07-27`.
+
+### Non-Automated Marketing & Visibility Recommendations
+1. **Visual Redaction Comparison Screenshots / GIF**:
+   - Create side-by-side PNG screenshots or animated terminal GIFs showing an un-anonymized sample DOCX/PDF and its redacted `[PERSON_1]` pseudonymized output.
+   - Embed screenshots in `README.md` under a `## Preview & Visual Output` section.
+
+2. **Privacy / GDPR Tool Directory Submissions**:
+   - Submit `anonymizer` to privacy-focused software lists (e.g., Awesome-Privacy, Awesome-GDPR, Awesome-Selfhosted).
+   - Position as local-first, zero-cloud Python library for pre-clearing sensitive documents before sending inputs to cloud-hosted LLM APIs.
+
+3. **CLI Walkthrough Screencast**:
+   - Record a 30-second terminal recording (`asciinema` or `.gif`) demonstrating `anonymizer self-test` and `anonymizer anonymize`.
+
+4. **Integration Showcase Article**:
+   - Write a technical blog post / Dev.to tutorial: "Building a Fail-Closed Document Redaction Pipeline in Python using spaCy & Fernet Encryption".

@@ -4,6 +4,12 @@
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](pyproject.toml)
 [![Security: Fail--Closed](https://img.shields.io/badge/Security-Fail--Closed-red.svg)](RELEASE_GATE.md)
 [![GDPR / DSGVO: Art. 4(5)](https://img.shields.io/badge/DSGVO-Art._4%285%29_Pseudonymisierung-green.svg)](#rechtlicher-rahmen-und-verantwortung)
+[![LLM / AI Friendly: llms.txt](https://img.shields.io/badge/LLM--Friendly-llms.txt-blueviolet.svg)](llms.txt)
+[![Ecosystem: ELLMOS / open-bricks](https://img.shields.io/badge/Ecosystem-ELLMOS-orange.svg)](https://github.com/ellmos-ai)
+[![Hygiene Checked: 2026-07-27](https://img.shields.io/badge/Hygiene--Checked-2026--07--27-brightgreen.svg)](#sicherheitsvertrag)
+
+> [!NOTE]
+> **AI Agent & LLM Integration Notice**: `anonymizer` provides a machine-readable [`llms.txt`](llms.txt) for automated AI agent discovery and integration. AI agents requiring privacy-preserving pre-cleared text inputs prior to sending prompts to external LLMs can utilize `anonymizer` locally and offline.
 
 `anonymizer` 0.2.5 pseudonymisiert lokale Dokumente (`.txt`, `.md`, `.docx`, `.xlsx`, `.pdf`) vollständig lokal und ohne Cloud-Abhängigkeit.
 
@@ -18,6 +24,41 @@
 Das Modul verarbeitet sensible personenbezogene Daten ausschließlich lokal;
 Verantwortung, Grenzen und rechtlicher Rahmen der Nutzung stehen unter
 „Rechtlicher Rahmen und Verantwortung" weiter unten.
+
+## Systemarchitektur
+
+```mermaid
+flowchart TD
+    subgraph Input ["📄 Document Input (Offline / Local)"]
+        DOCX["DOCX (OOXML, Headers, Footers)"]
+        XLSX["XLSX (Sheets, Comments)"]
+        PDF["PDF (Text & Metadata)"]
+        TXT["TXT / MD"]
+    end
+
+    subgraph Core ["🛡️ Anonymizer Engine"]
+        NER["spaCy NER (de_core_news_lg)<br/>+ POS (PROPN) Filtering"]
+        Anchor["Anchor Verification<br/>(Lexicon & Title Anchors)"]
+        Harden["Surface-Level Hardening<br/>(Contractions & OOV Stopwords)"]
+        FailClosed{"Fail-Closed Contract Check<br/>(Parser Error / Unverified Media?)"}
+    end
+
+    subgraph Security ["🔒 Crypto & Storage"]
+        Fernet["Fernet Authenticated Encryption"]
+        PBKDF["PBKDF2-HMAC-SHA256 Key Derivation"]
+        Atomic["Atomic Renaming to Output Path"]
+    end
+
+    Input --> NER
+    NER --> Anchor --> Harden --> FailClosed
+    FailClosed -- "Fail (Unverified Media / Error)" --> STOP["⛔ Publication Blocked / Halt"]
+    FailClosed -- "Pass" --> Fernet
+    Fernet --> PBKDF --> Atomic
+    Atomic --> Output ["✅ Pseudonymized Output Folder"]
+
+    style STOP fill:#ffcccc,stroke:#ff0000
+    style Output fill:#ccffcc,stroke:#00aa00
+```
 
 ## Sicherheitsvertrag
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-27 — Discoverability & Visual Architecture (Pfad B)
+
+- **README Design & Badges:** Badges für Ecosystem (`ELLMOS / open-bricks`), LLM-Friendly (`llms.txt`), und Hygiene-Check (`2026-07-27`) eingebunden.
+- **AI Agent Integration Callout:** GFM Note Callout (`> [!NOTE]`) für maschinelle Entdeckbarkeit und lokale KI-Agent-Anwendung vor externen LLM-Prompts ergänzt.
+- **Mermaid Systemarchitektur:** Interaktives Mermaid-Ablaufdiagramm zur Visualisierung der Fail-Closed-Pipeline, spaCy-NER, Anker-Prüfung und Fernet-Schlüsselableitung hinzugefügt.
+- **Maschinenlesbare Dokumentation (`llms.txt`):** `Last-checked` Zeitstempel auf 2026-07-27 aktualisiert.
+
 ## 2026-07-26 — Technische Hygiene & Maintenance
 
 - **Testkonfiguration & Isolation (`pyproject.toml`):** `pythonpath = ["."]` in `[tool.pytest.ini_options]` hinterlegt für umgebungsunabhängiges Ausführen der Testsuite.

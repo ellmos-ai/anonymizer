@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-07-29 — Technical Hygiene & Documentation
+
+- **Machine-readable documentation:** Removed the stale reference to a non-existent `README_de.md` and clarified that `README.md` is the German primary documentation with an English legal summary.
+- **Verification status:** Updated the `llms.txt` snapshot to the current local full-suite result (71 passed, 2 skipped, 18 subtests) and refreshed the README hygiene badge.
+
 ## 2026-07-27 — Discoverability & Visual Architecture (Pfad B)
 
 - **README Design & Badges:** Badges für Ecosystem (`ELLMOS / open-bricks`), LLM-Friendly (`llms.txt`), und Hygiene-Check (`2026-07-27`) eingebunden.

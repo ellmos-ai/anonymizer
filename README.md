@@ -1,3 +1,5 @@
+<img src="assets/banner.png" width="100%" alt="Anonymizer banner">
+
 # anonymizer — Standalone-Modul
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)

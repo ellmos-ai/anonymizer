@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-08-15 — Surface After-Care
+
+- **Interne Arbeitsdateien aus dem Repository genommen:** `TODO.md` (interne
+  Aufgaben- und Laufprotokollsammlung mit Operator-Sprache) und
+  `MARKETING-LOG.txt` (interne Sichtbarkeits-Empfehlungen) sind nur noch lokal
+  vorhanden und werden über `.gitignore` ausgeschlossen. Die für Leser
+  relevante Entwicklungsgeschichte steht hier im `CHANGELOG.md`, der
+  Prüfstand in `RELEASE_GATE.md`.
+- **Interne Ablagepfade entfernt (`WIRING.md`):** Der Integrationsbaum zeigte
+  Pfade der internen Modul-/Skill-Ablage, die für Außenstehende nicht
+  auflösbar sind. Ersetzt durch projektrelative Pfade mit Erläuterung.
+- **Referenzpfad im Test entkoppelt (`tests/test_security_boundaries.py`):**
+  Der End-to-End-DoD-Test enthielt einen absoluten lokalen Windows-Pfad zur
+  synthetischen Referenzakte. Der Pfad kommt jetzt aus der Umgebungsvariablen
+  `ANONYMIZER_REFERENCE_CASE_DIR`; ohne sie wird der Test übersprungen
+  (Verhalten wie zuvor).
+- **Veröffentlichungsstand richtiggestellt (`RELEASE_GATE.md`):** Das Dokument
+  führte die Öffentlichstellung weiter als „Operator-Entscheidung ausstehend",
+  obwohl das Repository seit 2026-07-24 öffentlich ist. Offen ist stattdessen
+  ein Versions-Tag/GitHub-Release für 0.2.5 — das ist jetzt als eigenes Gate
+  ausgewiesen. Zugleich „echte Akte" → „synthetische Referenzakte"
+  präzisiert (die Referenzdokumente sind durchgehend synthetisch).
+- **Manifeste auf den tatsächlichen Stand gebracht:** `ellmos-module.json`
+  stand auf `visibility: public-candidate` und `privacy.level: private`,
+  obwohl das Repository öffentlich ist — beides korrigiert und der
+  Privacy-Hinweis auf das Unterscheidende umformuliert (öffentlicher Code,
+  nicht veröffentlichungsfähige Verarbeitungsdaten). Repository-URL in beiden
+  Manifesten ergänzt (`ellmos-module.v2.json` hatte `repository: null`).
+- **Mermaid-Diagramm repariert (`README.md`):** Der Ausgabeknoten war als
+  `Output ["…"]` mit Leerzeichen notiert (gültig nur für `subgraph`), was das
+  Diagramm auf GitHub nicht rendern lässt. Korrigiert zu `Output["…"]`.
+- **Hygiene-Zeitstempel** in README-Badge und `llms.txt` auf 2026-08-15
+  aktualisiert; `CHANGELOG.md` in die `llms.txt`-Dateiliste aufgenommen.
+
 ## 2026-07-29 — Technical Hygiene & Documentation
 
 - **Machine-readable documentation:** Removed the stale reference to a non-existent `README_de.md` and clarified that `README.md` is the German primary documentation with an English legal summary.

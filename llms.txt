@@ -88,10 +88,11 @@ ellmos anonymizer python
 ## Important Files
 
 - `README.md`: German main documentation with an English legal summary.
+- `CHANGELOG.md`: Version history with the reasoning behind each NER hardening step.
 - `RELEASE_GATE.md`: Security and release verification gate.
 - `SECURITY.md`: Security model and vulnerability boundaries.
 - `SECURITY_REVIEW_2026-07-16.md`: Detailed privacy and security review.
 - `WIRING.md`: Integration & system boundary documentation.
 - `pyproject.toml`: Package dependencies and entry points.
 
-## Last-checked: 2026-07-29 (local full suite: 71 passed, 2 skipped, 18 subtests)
+## Last-checked: 2026-08-15 (surface after-care; local full suite: see CHANGELOG)

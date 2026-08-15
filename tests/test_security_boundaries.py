@@ -475,16 +475,21 @@ class TestDetectionBoundary(unittest.TestCase):
         "de_core_news_lg model required for the real end-to-end DoD check",
     )
     def test_ner_run2_real_akte_end_to_end_no_corruption(self):
-        """Pflicht-DoD (Operator, nach RUN3-Regression): DocumentAnonymizer
-        gegen die ECHTE synthetische RUN2-Akte
-        (C:\\_Local_DEV\\foerderplaner_referenz\\ARCHIV_2026-07-23_RUN2\\quelle\\,
-        synthetisch) -- die tatsaechlich anonymisierte Ausgabe darf KEINE
-        der bekannten Fehlklassen enthalten und muss weiterhin lesbaren,
-        unkorrumpierten Fliesstext liefern. Wird uebersprungen, wenn der
-        Referenzordner auf diesem Host nicht vorhanden ist."""
-        source = Path(r"C:\_Local_DEV\foerderplaner_referenz\ARCHIV_2026-07-23_RUN2\quelle")
+        """Pflicht-DoD (nach RUN3-Regression): DocumentAnonymizer gegen die
+        vollstaendige synthetische Referenzakte (RUN2) -- die tatsaechlich
+        anonymisierte Ausgabe darf KEINE der bekannten Fehlklassen enthalten
+        und muss weiterhin lesbaren, unkorrumpierten Fliesstext liefern.
+
+        Die Referenzakte ist nicht Teil des Repositories (synthetische, aber
+        umfangreiche Beispieldokumente). Ihr Pfad wird ueber die
+        Umgebungsvariable ANONYMIZER_REFERENCE_CASE_DIR angegeben; ohne sie
+        wird der Test uebersprungen."""
+        reference_dir = os.environ.get("ANONYMIZER_REFERENCE_CASE_DIR")
+        if not reference_dir:
+            self.skipTest("ANONYMIZER_REFERENCE_CASE_DIR nicht gesetzt")
+        source = Path(reference_dir)
         if not source.is_dir():
-            self.skipTest("RUN2-Referenzakte auf diesem Host nicht vorhanden")
+            self.skipTest("Referenzakte unter ANONYMIZER_REFERENCE_CASE_DIR nicht vorhanden")
 
         anon = DocumentAnonymizer(require_ner=True)
         found = anon.scan_folder_for_sensitive_data(str(source))

@@ -7,15 +7,17 @@ Stand: 2026-07-16
 Der aktuelle Checkout enthält genau eine direkte Integration:
 
 ```text
-.AI/.MODULES/.DOMAINS/anonymizer/anonymizer_modul/core.py
+anonymizer/anonymizer_modul/core.py
         │
         ▼ Reexport
-.AI/.SKILLS/skills/education/foerderplaner/
-  scripts/services/anonymizer_service.py
+foerderplaner/scripts/services/anonymizer_service.py
         │
         ▼ Nutzung
-  scripts/services/document_pipeline.py
+foerderplaner/scripts/services/document_pipeline.py
 ```
+
+`foerderplaner` ist ein separater, nicht veröffentlichter Konsument; die Pfade
+oben sind relativ zu dessen Projektwurzel angegeben.
 
 Der Shim stellt die Modul-API für den Skill bereit. `document_pipeline.py`
 verwendet unter anderem Mapping-, Extraktions-, Scan- und

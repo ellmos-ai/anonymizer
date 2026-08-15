@@ -51,3 +51,8 @@ htmlcov/
 LOCK*.txt
 PRIVATE.txt
 _intern/
+
+# Interne Arbeits- und Planungsdateien (kein Repo-Inhalt)
+TODO.md
+MARKETING-LOG.txt
+_after-care/

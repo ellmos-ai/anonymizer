@@ -1,10 +1,12 @@
 # Release Gate — anonymizer 0.2.5
 
-Stand: 2026-07-23 (vorherige Fassungen: 0.2.4, 0.2.3, 0.2.2, 0.2.1 und 0.2.0/2026-07-16)
+Stand: 2026-08-15 (Inhalt der Prüfgates: 0.2.5/2026-07-23; vorherige Fassungen:
+0.2.4, 0.2.3, 0.2.2, 0.2.1 und 0.2.0/2026-07-16)
 
 ## Entscheidung
 
-**Tech-Gates erfüllt. Public-Umschaltung: Operator-Entscheidung ausstehend.**
+**Tech-Gates erfüllt. Repository seit 2026-07-24 öffentlich; ein
+Versions-Tag/GitHub-Release für 0.2.5 steht noch aus.**
 
 Die Datenschutzgrenzen sind lokal verifiziert. Der unabhängige Ausgangsreview
 (0.1.0→0.2.0) fand 3×P1 und 3×release-relevante P2; die gezielten Nachchecks
@@ -41,14 +43,14 @@ nicht greift, weil sie auf deutsche Regeln zugeschnitten ist. 0.2.5 ergänzt
 eine modellversions-robuste Oberflächen-Härtung (Kontraktionswörter,
 Gattungsbegriff-Präfixmatch, deutsches Vokabular-Check), die unabhängig von
 POS/Lemma und damit unabhängig vom installierten Modell greift. Gegen die
-echte RUN2-Referenzakte end-to-end in BEIDEN Umgebungen (mit und ohne
+synthetische RUN2-Referenzakte end-to-end in BEIDEN Umgebungen (mit und ohne
 `en_core_web_lg`) verifiziert (siehe Prüfgates unten).
 
 Der fehlende OCR-Workflow für bildhaltige Inhalte bleibt ein bewusster,
 dokumentierter Funktionsausschluss (fail-closed), kein offenes Gate. Die
-tatsächliche Öffentlichstellung des Repositories (Push, Sichtbarkeit,
-Ankündigung) ist ein separater, vom Operator zu treffender Schritt
-(`/repo-publish-check` + Freigabe) und nicht Teil dieses technischen Gates.
+Öffentlichstellung des Repositories ist seit 2026-07-24 vollzogen; offen
+bleiben davon getrennt ein Versions-Tag/GitHub-Release und eine etwaige
+Paketveröffentlichung (Wheel/Twine).
 
 ## Prüfgates
 
@@ -64,12 +66,13 @@ Ankündigung) ist ein separater, vom Operator zu treffender Schritt
 | Unabhängiger Schlussreview | grün — 0×P0/P1/release-relevante P2 (0.1.0→0.2.0) |
 | Git-Repository + CI | grün seit 2026-07-23 — Branch `main`, `.github/workflows/ci.yml` (Python 3.11/3.12 auf ubuntu-latest: Tests, Lint, Bandit) |
 | Bandit (`bandit -r anonymizer_modul -ll`) | grün — 0 Medium/High nach defusedxml-Härtung (zuvor 3× Medium/B314) |
-| Realer NER-Modelltest | grün — `de_core_news_lg`, 7/10 synthetische Namen erkannt (dokumentiert in `TODO.md`) |
+| Realer NER-Modelltest | grün — `de_core_news_lg`, 7/10 synthetische Namen erkannt (dokumentiert in `CHANGELOG.md` 0.2.1) |
 | Template-Medien-Allowlist | grün seit 2026-07-23 — `trusted_template_path` (API/CLI/ENV), SHA-256-Hash-Verifikation gegen Referenz-Template |
-| NER-Anker-Prinzip + Mehrwort-/Oberflächen-Härtung (0.2.3–0.2.5) | grün in BEIDEN Umgebungen — End-to-End-Realcheck gegen die echte RUN2-Akte: kein Fehlklassen-Token ("Grob", "Umgang", "Klettverschlüsse", "Landkreises", "Einrichtungsangaben", "Begleitung", "Handlauf", "Zähneputzen", "Anziehen", "Essen", "Kurze Notiz") BESTAETIGT (destruktiv ersetzt); Profil-Mapping korrekt (Kim, Beispiel, Kim Beispiel + reale Drittpersonen); alle Fehlklassen-Phrasen wörtlich unverändert im anonymisierten Output |
+| NER-Anker-Prinzip + Mehrwort-/Oberflächen-Härtung (0.2.3–0.2.5) | grün in BEIDEN Umgebungen — End-to-End-Realcheck gegen die vollständige synthetische Referenzakte (RUN2): kein Fehlklassen-Token ("Grob", "Umgang", "Klettverschlüsse", "Landkreises", "Einrichtungsangaben", "Begleitung", "Handlauf", "Zähneputzen", "Anziehen", "Essen", "Kurze Notiz") BESTAETIGT (destruktiv ersetzt); Profil-Mapping korrekt (Kim, Beispiel, Kim Beispiel + fiktive Drittpersonen); alle Fehlklassen-Phrasen wörtlich unverändert im anonymisierten Output |
 | README Legal-/DSGVO-Abschnitt | grün seit 2026-07-23 — „Rechtlicher Rahmen und Verantwortung" (DSGVO, § 203 StGB, englische Kurzfassung) |
 | README Modellversions-Sensitivität | grün seit 2026-07-23 — empfohlene/getestete Version, `en_core_web_lg`-Risikohinweis, Versions-Pin-Kommentar in `pyproject.toml` |
-| Öffentliche Sichtbarkeit (Push/Release) | ausstehend — Operator-Entscheidung, kein Tech-Gate |
+| Öffentliche Sichtbarkeit | erledigt — Repository seit 2026-07-24 öffentlich unter `ellmos-ai/anonymizer` |
+| Versions-Tag / GitHub-Release | ausstehend — für 0.2.5 existiert noch kein Tag |
 
 ## Bekannte Restpunkte
 

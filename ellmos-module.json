@@ -4,7 +4,8 @@
   "display_name": "Anonymizer",
   "version": "0.2.5",
   "kind": "standalone-module",
-  "visibility": "public-candidate",
+  "visibility": "public",
+  "repository": "https://github.com/ellmos-ai/anonymizer",
   "description": "Fail-closed Pseudonymisierung personenbezogener Dokumente (Text, DOCX, PDF, XLSX) mit lokaler authentifiziert verschlüsselter Schlüsselspeicherung.",
 
   "origin": {
@@ -16,9 +17,9 @@
   "authors": ["ellmos", "BACH Contributors"],
   "license": "MIT",
   "privacy": {
-    "level": "private",
+    "level": "public-code-sensitive-data",
     "client_data": true,
-    "note": "Klientenbezogene Daten — nicht veröffentlichen; keys/ und *.enc aus VCS ausgeschlossen"
+    "note": "Der Modulcode ist öffentlich (MIT). Die damit verarbeiteten Daten sind klientenbezogen und dürfen nicht veröffentlicht werden; keys/ und *.enc sind aus VCS ausgeschlossen."
   },
 
   "capabilities": [

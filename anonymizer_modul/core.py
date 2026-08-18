@@ -32,15 +32,21 @@ Kernabhängigkeit:
 
 Optionale Abhängigkeiten (pip install ...):
   python-docx    — Word-Dokument-Anonymisierung
-  PyMuPDF        — PDF-Schwärzung (fitz)
-  pikepdf        — PDF-AES-256-Verschlüsselung
+  pypdf          — PDF-Textextraktion zum Scannen (BSD-3-Clause)
+  pikepdf        — PDF-AES-256-Verschlüsselung (MPL-2.0)
   openpyxl       — Excel-Anonymisierung
+  PyMuPDF        — NUR PDF-Schwärzung/Redaktion (fitz), separates Extra
+                   "pdf-redact". AGPL-3.0 — bewusst NICHT im Standard-"pdf"-
+                   Extra, siehe Entscheidung E08 vom 2026-08-18 und README.
 
-Version: 0.2.5 (modellversions-robuste Oberflächen-Härtung gegen
-Fehltagging bei zusätzlich installiertem en_core_web_lg 2026-07-23; Basis:
-0.2.4 Mehrwort-Span-Härtung, 0.2.3 Anker-Prinzip, 0.2.2 POS/Lemma-Span-
-Validierung, 0.2.1 defusedxml-Härtung, 0.2.0 Sicherheits- und
-Datenschutz-Härtung 2026-07-16)
+Version: 0.3.0 (Entscheidung E08, 2026-08-18: PyMuPDF aus dem Standard-"pdf"-
+Extra entfernt, PDF-Scan laeuft ueber pypdf; PyMuPDF bleibt NUR fuer die
+PDF-Schwaerzung im separaten "pdf-redact"-Extra, AGPL-3.0 dort bewusst
+gekennzeichnet statt geerbt. Basis: 0.2.5 modellversions-robuste
+Oberflächen-Härtung gegen Fehltagging bei zusätzlich installiertem
+en_core_web_lg 2026-07-23; 0.2.4 Mehrwort-Span-Härtung, 0.2.3 Anker-Prinzip,
+0.2.2 POS/Lemma-Span-Validierung, 0.2.1 defusedxml-Härtung, 0.2.0
+Sicherheits- und Datenschutz-Härtung 2026-07-16)
 Copyright (c) 2026 ellmos / BACH Contributors — MIT License
 """
 
@@ -79,14 +85,31 @@ try:
 except ImportError:
     DOCX_AVAILABLE = False
 
-# PDF-Verarbeitung (PyMuPDF)
+# PDF-Textextraktion zum Scannen (pypdf, BSD-3-Clause) -- rein lesend, keine
+# Schwaerzung. Entscheidung E08 vom 2026-08-18: fuer die Erkennung sensibler
+# Daten braucht es keine PyMuPDF-Bindung, siehe tests/test_no_agpl.py.
+try:
+    from pypdf import PdfReader
+    PYPDF_AVAILABLE = True
+except ImportError:
+    PYPDF_AVAILABLE = False
+
+# PDF-Schwaerzung/Redaktion (PyMuPDF) -- BEWUSST vom "pdf"-Extra getrennt und
+# NICHT Teil der Standardinstallation. PyMuPDF steht unter AGPL-3.0; echte,
+# inhaltliche Text-/Metadaten-Entfernung (nicht nur visuelles Ueberdecken) ist
+# mit rein permissiven Bibliotheken derzeit nicht mit vertretbarer Sicherheits-
+# garantie nachbaubar (siehe DECISIONS/E08 und README, Abschnitt "PDF-
+# Schwaerzung"). Wer diese Funktion nutzt, installiert das separate Extra
+# "pdf-redact" und bindet sich damit bewusst an die AGPL -- fuer diese eine
+# Funktion, nicht fuer das Modul. Alles andere (Scannen, DOCX/XLSX-Anonymisierung,
+# Verschluesselung) bleibt PyMuPDF-frei.
 try:
     import fitz
     FITZ_AVAILABLE = True
 except ImportError:
     FITZ_AVAILABLE = False
 
-# PDF-Verschlüsselung (pikepdf)
+# PDF-Verschlüsselung (pikepdf, MPL-2.0 -- permissiv-kompatibel)
 try:
     import pikepdf
     PIKEPDF_AVAILABLE = True
@@ -1990,12 +2013,11 @@ class DocumentAnonymizer:
                     text = path.read_text(encoding="latin-1")
 
             elif suffix == ".pdf":
-                if not FITZ_AVAILABLE:
-                    raise RuntimeError("PyMuPDF is required for PDF scanning")
-                doc = fitz.open(str(path))
-                for page in doc:
-                    text += page.get_text()
-                doc.close()
+                if not PYPDF_AVAILABLE:
+                    raise RuntimeError("pypdf is required for PDF scanning")
+                reader = PdfReader(str(path))
+                for page in reader.pages:
+                    text += page.extract_text() or ""
 
             elif suffix == ".xlsx":
                 if not EXCEL_AVAILABLE:
@@ -2583,6 +2605,16 @@ class DocumentAnonymizer:
                        encrypt_password: Optional[str] = None) -> Tuple[bool, int]:
         """
         PDF-Anonymisierung via PyMuPDF-Schwärzung und optionale Verschlüsselung.
+
+        LIZENZGRENZE (Entscheidung E08, 2026-08-18): Diese Methode ist die
+        EINZIGE Stelle im Modul, die PyMuPDF (AGPL-3.0) braucht -- fuer die
+        Content-Stream-Redaktion (page.add_redact_annot + apply_redactions),
+        die den sensiblen Text tatsaechlich aus dem PDF entfernt statt ihn nur
+        visuell zu ueberdecken. Alle anderen PDF-Operationen (Scannen,
+        Verschluesselung) sind PyMuPDF-frei, siehe FITZ_AVAILABLE-Kommentar
+        am Modulanfang und tests/test_no_agpl.py. Ohne installiertes PyMuPDF
+        (Standard-"pdf"-Extra) degradiert diese Methode kontrolliert zu
+        (False, 0) -- kein Absturz, keine unvollstaendige Schwaerzung.
 
         Herkunfts-Komponentenreferenz (NICHT importiert — inline implementiert):
           - DokuZentrum RedactionDetector (Erkennungslogik)

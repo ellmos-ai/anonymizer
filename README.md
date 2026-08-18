@@ -158,6 +158,44 @@ Fehlerbild von vornherein.
 | `.pdf` | Textschwärzung; Metadaten, Annotationen, Formulare, Links, Anhänge, Bookmarks und Page-Labels werden entfernt |
 | `.doc` | begrenzte externe Textextraktion; sichere Ausgabe als `.txt` |
 
+### PDF-Schwärzung: Lizenzgrenze (Entscheidung E08, 2026-08-18)
+
+`anonymizer` ist MIT-lizenziert. Das **Scannen** von PDFs (Erkennung sensibler
+Daten) läuft über [`pypdf`](https://pypi.org/project/pypdf/) (BSD-3-Clause),
+die optionale **Verschlüsselung** über [`pikepdf`](https://pypi.org/project/pikepdf/)
+(MPL-2.0) — beide permissiv und Teil des `pdf`-Extras.
+
+Die **Schwärzung selbst** (`_anonymize_pdf`) braucht dagegen
+[PyMuPDF](https://pypi.org/project/PyMuPDF/) (AGPL-3.0): Sie entfernt sensible
+Textstellen *tatsächlich* aus dem PDF-Content-Stream, statt sie nur visuell zu
+überdecken — ein rein visuelles Überdecken wäre bei einem Anonymisierungs-Tool
+ein Sicherheitsregress (der Text bliebe extrahierbar). Eine gleichwertige
+Neuimplementierung mit ausschließlich permissiv lizenzierten Bibliotheken
+(`pikepdf`/`pypdf`/`pypdfium2`) war zum Zeitpunkt dieser Entscheidung nicht mit
+vertretbarer Sicherheitsgarantie machbar: Diese Bibliotheken bieten keine
+fertige "durchsuche Text und entferne ihn aus dem Content-Stream"-Funktion;
+ein Selbstbau (Content-Stream-Tokenisierung, Font-/CMap-Dekodierung,
+Positions-Overlay) hätte ein neues, kaum verifizierbares Fehlerrisiko genau an
+der sicherheitskritischsten Stelle des Moduls eingeführt.
+
+Deshalb ist die Grenze **explizit und eng gezogen**, statt implizit vererbt zu
+werden:
+
+- PyMuPDF steht in einem eigenen Extra `pdf-redact` — **nicht** in `pdf` oder
+  `all`. `pip install anonymizer-modul[pdf]` bzw. `[all]` bleibt vollständig
+  AGPL-frei.
+- Ohne installiertes `pdf-redact`-Extra scannt und verschlüsselt das Modul
+  PDFs weiterhin normal; nur `_anonymize_pdf()` (aufgerufen aus
+  `anonymize_file`/`anonymize_folder` für `.pdf`-Dateien) liefert dann
+  kontrolliert `(False, 0)` zurück, statt abzustürzen oder unvollständig zu
+  schwärzen.
+- `tests/test_no_agpl.py` hält die Grenze als Wächter-Test dauerhaft fest:
+  PyMuPDF darf nur im deklarierten Import-Block und in `_anonymize_pdf`
+  vorkommen, und `pdf`/`all` dürfen es nicht als Abhängigkeit ziehen.
+- Wer PDF-Schwärzung tatsächlich braucht: `pip install anonymizer-modul[pdf-redact]`
+  — eine bewusste, ausdrückliche Entscheidung für diese eine Funktion, nicht
+  ein impliziter Nebeneffekt von `[pdf]` oder `[all]`.
+
 Bild- oder eingebettete Binärinhalte in DOCX/XLSX und bildhaltige PDFs werden
 standardmäßig abgelehnt, weil das Modul keine OCR-Garantie geben kann.
 `allow_unverified_media=True` ist nur für einen separat geprüften lokalen
@@ -248,8 +286,19 @@ C:\_Local_Anon\venv\Scripts\python -m pip install -e "C:\Pfad\zu\anonymizer[all]
 ```
 
 `cryptography` ist Pflichtabhängigkeit. Format-Extras können gezielt als
-`docx`, `pdf`, `excel` oder gemeinsam als `all` installiert werden. Die
-spaCy-Modelle werden separat installiert:
+`docx`, `pdf`, `excel` oder gemeinsam als `all` installiert werden — alle
+vier bleiben AGPL-frei. PDF-**Schwärzung** braucht zusätzlich das separate
+Extra `pdf-redact` (PyMuPDF, AGPL-3.0) — siehe "PDF-Schwärzung: Lizenzgrenze"
+oben:
+
+```powershell
+# Standard: scannen, verschluesseln, kein PyMuPDF
+python -m pip install -e "C:\Pfad\zu\anonymizer[all]"
+# Zusaetzlich fuer PDF-Schwaerzung (bindet an AGPL-3.0 fuer diese Funktion):
+python -m pip install -e "C:\Pfad\zu\anonymizer[all,pdf-redact]"
+```
+
+Die spaCy-Modelle werden separat installiert:
 
 ```powershell
 python -m spacy download de_core_news_lg

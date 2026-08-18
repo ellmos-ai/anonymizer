@@ -22,7 +22,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install package (editable, all extras)
+      # BEWUSST OHNE "pdf-redact": Entscheidung E08 (2026-08-18). Der
+      # Standard-Testlauf bleibt frei von PyMuPDF (AGPL-3.0), damit "alle
+      # Extras ausser dem AGPL-Extra" auch in CI wirklich AGPL-frei bleibt --
+      # nicht nur auf dem Papier. TestPdfBoundary (PDF-Schwaerzung) wird hier
+      # uebersprungen (@unittest.skipUnless(FITZ_AVAILABLE, ...)) und im
+      # separaten Job "test-pdf-redact" unten explizit abgedeckt.
+      - name: Install package (editable, all extras except pdf-redact)
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[all,dev]"
@@ -31,6 +37,32 @@ jobs:
         env:
           PYTHONIOENCODING: utf-8
         run: pytest -v
+
+  test-pdf-redact:
+    name: Tests (PDF-Schwaerzung, AGPL-Extra explizit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Eigener Job statt Teil des Standard-Tests: macht die AGPL-Grenze auch
+      # in CI sichtbar, statt sie in einer gemeinsamen "all"-Installation zu
+      # verstecken. Deckt TestPdfBoundary (echte Content-Stream-Redaktion,
+      # Metadaten-/Annotation-/Attachment-Entfernung) ab, siehe
+      # tests/test_security_boundaries.py.
+      - name: Install package (editable, pdf-redact extra)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[pdf-redact,dev]"
+
+      - name: Run PDF-boundary tests only
+        env:
+          PYTHONIOENCODING: utf-8
+        run: pytest -v tests/test_security_boundaries.py -k Pdf
 
   lint:
     name: Lint

@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-08-18 — Lizenzgrenze PyMuPDF (Entscheidung E08) — 0.3.0
+
+- **AGPL-3.0-Abhängigkeit aus dem Standard-Bundle entfernt.** `anonymizer` ist
+  MIT-lizenziert und öffentlich; das `pdf`-Extra führte bisher PyMuPDF
+  (AGPL-3.0) als Abhängigkeit — ein MIT-Modul mit installiertem AGPL-Extra
+  bindet das kombinierte Werk an die AGPL, gerade bei Weiterverbreitung durch
+  Bundling. Befund: Ticket T-20260818-775009068.
+- **PDF-Scan läuft jetzt über `pypdf`** (BSD-3-Clause) statt PyMuPDF —
+  `extract_text_from_file()` betrifft nur die Erkennung sensibler Daten, keine
+  Schwärzung, und ist damit vollständig ersetzbar gewesen.
+- **PDF-Schwärzung (`_anonymize_pdf`) bleibt auf PyMuPDF angewiesen**, jetzt
+  aber im eigenen Extra `pdf-redact`, getrennt von `pdf` und `all`: Die
+  Content-Stream-Redaktion entfernt sensible Textstellen tatsächlich aus dem
+  PDF (nicht nur visuell überdeckt) — eine gleichwertige Neuimplementierung
+  mit rein permissiven Bibliotheken war ohne belastbare Sicherheitsgarantie
+  nicht zu leisten. Details und Begründung: README, Abschnitt „PDF-Schwärzung:
+  Lizenzgrenze".
+- **Neuer Wächter-Test** `tests/test_no_agpl.py`: hält fest, dass PyMuPDF
+  ausschließlich im deklarierten Import-Block und in `_anonymize_pdf`
+  vorkommt und dass `pdf`/`all` es nicht als Abhängigkeit ziehen.
+- **CI aufgeteilt:** Der Standard-Testjob installiert `[all,dev]` (AGPL-frei);
+  ein neuer Job `test-pdf-redact` installiert `[pdf-redact,dev]` explizit und
+  deckt `TestPdfBoundary` weiterhin ab, statt die Grenze in einer
+  gemeinsamen Installation zu verstecken.
+- `pyproject.toml`, `ellmos-module.json`, `ellmos-module.v2.json`, `SKILL.md`
+  auf 0.3.0 und die neue Extra-Struktur nachgezogen.
+
 ## 2026-08-15 — Surface After-Care
 
 - **Interne Arbeitsdateien aus dem Repository genommen:** `TODO.md` (interne

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anonymizer-modul"
-version = "0.2.5"
+version = "0.3.0"
 description = "Fail-closed Standalone-Anonymizer für personenbezogene Dokumente"
 readme = "README.md"
 license = "MIT"
@@ -32,7 +32,22 @@ Repository = "https://github.com/ellmos-ai/anonymizer.git"
 
 [project.optional-dependencies]
 docx  = ["python-docx>=1.0"]
-pdf   = ["PyMuPDF>=1.22", "pikepdf>=8.0"]
+# PDF-Scan (pypdf, BSD-3-Clause) + PDF-Verschluesselung (pikepdf, MPL-2.0).
+# Bewusst OHNE PyMuPDF -- siehe "pdf-redact" unten. Entscheidung E08,
+# 2026-08-18: dieses Modul ist MIT-lizenziert und bleibt es auch im Standard-
+# Bundle; geerbte Copyleft aus einer Dritt-Dependency waere sonst der Fall,
+# den ein Baukasten-Bundle (Weiterverbreitung) real erzeugt.
+pdf   = ["pypdf>=4.0", "pikepdf>=8.0"]
+# PDF-SCHWAERZUNG/REDAKTION -- eigenes Extra, NICHT Teil von "pdf" oder "all".
+# PyMuPDF steht unter AGPL-3.0. Nur diese eine Funktion (echte, inhaltliche
+# Entfernung sensibler Textstellen aus dem Content-Stream, nicht nur ein
+# visuelles Ueberdecken) braucht sie -- eine gleichwertige Neuimplementierung
+# mit rein permissiven Bibliotheken war zum Zeitpunkt von E08 nicht mit
+# vertretbarer Sicherheitsgarantie machbar (siehe README, Abschnitt "PDF-
+# Schwaerzung"). Wer `pip install anonymizer-modul[pdf-redact]` waehlt,
+# bindet sich BEWUSST an die AGPL fuer diese Funktion -- nicht implizit ueber
+# "pdf" oder "all".
+"pdf-redact" = ["PyMuPDF>=1.22"]
 excel = ["openpyxl>=3.1"]
 # Generische Personennamen-Erkennung (DE+EN) fuer Drittpersonen in Fliesstext,
 # die keine explizit uebergebenen Namen sind (z.B. andere Kinder in Gruppen-
@@ -45,14 +60,16 @@ excel = ["openpyxl>=3.1"]
 # eigenstaendig fehlerhaft als PERSON taggen (0.2.5-Oberflaechen-Haertung
 # faengt das ab, aber reines Deutsch braucht das Modell gar nicht).
 ner   = ["spacy>=3.7"]
+# "all" bleibt bewusst frei von AGPL (kein PyMuPDF) -- wer PDF-Schwaerzung
+# braucht, installiert "pdf-redact" zusaetzlich und ausdruecklich.
 all   = [
     "python-docx>=1.0",
-    "PyMuPDF>=1.22",
+    "pypdf>=4.0",
     "pikepdf>=8.0",
     "openpyxl>=3.1",
     "spacy>=3.7",
 ]
-dev   = ["pytest>=7.0", "build>=1.2", "twine>=5.0", "ruff>=0.6"]
+dev   = ["pytest>=7.0", "build>=1.2", "twine>=5.0", "ruff>=0.6", "tomli>=2.0; python_version < '3.11'"]
 
 [project.scripts]
 anonymizer = "anonymizer_modul.core:main"

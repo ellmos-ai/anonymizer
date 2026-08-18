@@ -1,6 +1,6 @@
 # Security and privacy policy
 
-`anonymizer` verarbeitet besonders schützenswerte lokale Daten. Version 0.2.5
+`anonymizer` verarbeitet besonders schützenswerte lokale Daten. Version 0.3.0
 ist der einzige aktuell gewartete Stand.
 
 ## Meldung

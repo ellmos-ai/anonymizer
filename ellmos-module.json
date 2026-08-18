@@ -2,7 +2,7 @@
   "$schema": "ellmos-module-v1",
   "name": "anonymizer",
   "display_name": "Anonymizer",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "kind": "standalone-module",
   "visibility": "public",
   "repository": "https://github.com/ellmos-ai/anonymizer",
@@ -41,10 +41,32 @@
   },
 
   "optional_dependencies": {
-    "python-docx": "Word-Dokument-Anonymisierung",
-    "PyMuPDF": "PDF-Schwärzung",
-    "pikepdf": "PDF-AES-256-Verschlüsselung",
-    "openpyxl": "Excel-Anonymisierung"
+    "python-docx": {
+      "purpose": "Word-Dokument-Anonymisierung",
+      "license": "MIT",
+      "extra": "docx"
+    },
+    "pypdf": {
+      "purpose": "PDF-Scan (Erkennung sensibler Daten)",
+      "license": "BSD-3-Clause",
+      "extra": "pdf"
+    },
+    "pikepdf": {
+      "purpose": "PDF-AES-256-Verschlüsselung",
+      "license": "MPL-2.0",
+      "extra": "pdf"
+    },
+    "openpyxl": {
+      "purpose": "Excel-Anonymisierung",
+      "license": "MIT",
+      "extra": "excel"
+    },
+    "PyMuPDF": {
+      "purpose": "PDF-Schwärzung (Content-Stream-Redaktion, _anonymize_pdf)",
+      "license": "AGPL-3.0",
+      "extra": "pdf-redact",
+      "note": "Bewusst NICHT Teil von 'pdf' oder 'all' (Entscheidung E08, 2026-08-18). Wer diese Funktion braucht, installiert das Extra ausdruecklich und bindet sich damit an die AGPL fuer diese eine Funktion, nicht implizit fuers ganze Modul. Siehe README, Abschnitt 'PDF-Schwaerzung: Lizenzgrenze'."
+    }
   },
 
   "entrypoints": {

@@ -55,12 +55,13 @@ from .core import (
     # Verfügbarkeits-Flags
     CRYPTO_AVAILABLE,
     DOCX_AVAILABLE,
+    PYPDF_AVAILABLE,
     FITZ_AVAILABLE,
     PIKEPDF_AVAILABLE,
     EXCEL_AVAILABLE,
 )
 
-__version__ = "0.2.5"
+__version__ = "0.3.0"
 __all__ = [
     # Klassen
     "DocumentAnonymizer",
@@ -89,6 +90,7 @@ __all__ = [
     # Flags
     "CRYPTO_AVAILABLE",
     "DOCX_AVAILABLE",
+    "PYPDF_AVAILABLE",
     "FITZ_AVAILABLE",
     "PIKEPDF_AVAILABLE",
     "EXCEL_AVAILABLE",

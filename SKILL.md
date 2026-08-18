@@ -1,6 +1,6 @@
 ---
 name: anonymizer
-version: "0.2.5"
+version: "0.3.0"
 type: standalone-module
 standalone: true
 visibility: private
@@ -10,9 +10,11 @@ dependencies:
     - cryptography       # authentifizierte Fernet-Schlüsseldateien
   optional:
     - python-docx        # Word-Dokumente
-    - PyMuPDF            # PDF-Schwärzung
-    - pikepdf            # PDF-Verschlüsselung
+    - pypdf              # PDF-Scan (BSD-3-Clause)
+    - pikepdf            # PDF-Verschlüsselung (MPL-2.0)
     - openpyxl           # Excel
+    - PyMuPDF            # NUR PDF-Schwärzung, Extra "pdf-redact" (AGPL-3.0,
+                          # bewusst getrennt von "pdf"/"all" -- E08 2026-08-18)
 tags:
   - anonymisierung
   - datenschutz

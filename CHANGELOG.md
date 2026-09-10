@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-10 — Pfad B: Discoverability, Zweisprachige README-Architektur, Sequenzdiagramm & Governance
+
+- **Zweisprachige README-Architektur (Policy P-006):**
+  - `README.md` zur primären englischsprachigen Dokumentation mit vollständiger 1:1-Inhaltsparität ausgebaut.
+  - `README_de.md` als vollständige deutsche Dokumentation etabliert.
+  - Bidirektionaler Sprachwechsler (`**English** | [Deutsch](README_de.md)` / `[English](README.md) | **Deutsch**`) an der Spitze beider Dokumente verankert.
+  - Einheitliche 12-Punkte-Schnellnavigation mit wechselseitiger Ankerparität (#features/#funktionsumfang, #quick-start/#schnellstart, #system-architecture/#systemarchitektur, #workflow-sequence/#arbeitsablauf-sequenz, #security-contract/#sicherheitsvertrag, #governance-and-runtime-invariants/#governance--und-laufzeit-invarianten, #model-version-sensitivity/#modellversions-sensitivitaet, #supported-formats/#unterstuetzte-formate, #legal-framework-and-gdpr-responsibility/#rechtlicher-rahmen-und-verantwortung, #ecosystem-and-sister-modules/#oekosystem-und-geschwister-module, #testing-and-status/#tests-und-status, #license/#lizenz).
+- **Banner-Erhalt nach HOOK-BANNER-ASSET-01:**
+  - Bestehendes Header-Banner `assets/banner.png` strikt unverändert übernommen, kein Duplikat und kein Überschreiben.
+- **Interaktives Mermaid-Sequenzdiagramm:**
+  - Neues `sequenceDiagram` mit `autonumber` und strikt gequoteten Kanten- und Knotenbeschriftungen zur Visualisierung des zweistufigen Analyse- und Publikationsablaufs (Caller -> Scanner -> spaCy NER -> Anchor Guard -> Fail-Closed Gate -> Crypto -> Atomic Staging & Rename).
+  - Erfolgreich validiert via `lint_mermaid.py` (0 Syntaxfehler).
+- **Governance- & Laufzeit-Invarianten:**
+  - 10 Kern-Invarianten kodifiziert (`INV-LOCAL-01` bis `INV-LOCAL-10`): Zero Network Egress, Fail-Closed Contract, Authenticated Fernet Encryption, Structural POS Filtering, Anchor Verification, Surface Hardening, Trusted Template SHA-256 Gate, AGPL Licensing Boundary, DSGVO Art. 4(5) Parität und Atomic Directory Publish.
+- **Ökosystem-Matrix:**
+  - Direkte Vernetzung mit Schwester-Repositories dokumentiert (`foerderplaner`, `worksheet-generator`, `report-forge`, `usmc`, `memoryhooker`, `ellmos-homebase-mcp`, `open-bricks`).
+- **Metadaten- & Vertragstests:**
+  - `tests/test_metadata.py` mit Tests für Navigations- und Anker-Parität, Invarianten-Vollständigkeit und Mermaid-Syntax hinzugefügt.
+  - `pyproject.toml` URLs erweitert (Changelog, Security, Parent Organization, Umbrella Ecosystem, Marketing Log).
+  - `llms.txt` aktualisiert mit Verweisen auf `README.md` und `README_de.md`.
+
 ## 2026-08-18 — Lizenzgrenze PyMuPDF (Entscheidung E08) — 0.3.0
 
 - **AGPL-3.0-Abhängigkeit aus dem Standard-Bundle entfernt.** `anonymizer` ist

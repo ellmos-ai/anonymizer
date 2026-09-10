@@ -29,6 +29,11 @@ Homepage = "https://github.com/ellmos-ai/anonymizer"
 Documentation = "https://github.com/ellmos-ai/anonymizer#readme"
 Repository = "https://github.com/ellmos-ai/anonymizer.git"
 "Issue Tracker" = "https://github.com/ellmos-ai/anonymizer/issues"
+Changelog = "https://github.com/ellmos-ai/anonymizer/blob/main/CHANGELOG.md"
+Security = "https://github.com/ellmos-ai/anonymizer/blob/main/SECURITY.md"
+"Parent Organization" = "https://github.com/ellmos-ai"
+"Umbrella Ecosystem" = "https://github.com/open-bricks"
+"Marketing Log" = "https://github.com/ellmos-ai/anonymizer/blob/main/MARKETING-LOG.txt"
 
 [project.optional-dependencies]
 docx  = ["python-docx>=1.0"]

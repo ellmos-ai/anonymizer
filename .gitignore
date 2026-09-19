@@ -39,18 +39,48 @@ Thumbs.db
 *.swo
 .idea/
 .vscode/
+*.orig
+*.rej
 
-# Testausgaben
+# Testausgaben und Caches
 .pytest_cache/
+.ruff_cache/
+.hypothesis/
 htmlcov/
 .coverage
+coverage.xml
 
-# Lokale Sicherungen und Laufzeit-Locks nicht paketieren/committen
+# Lokale Sicherungen, Locks & Cloud-Sync-Artefakte
 *.bak
 *.bak_*
-LOCK*.txt
 PRIVATE.txt
 _intern/
+
+# Multi-Host Synchronisations-Konflikte
+*conflicted copy*
+* (Kopie)*
+* (Copy)*
+*-LAPTOP*
+*-Mac Studio*
+*-MacBook*
+*-ASUS*
+*-ASUS-GEI*
+*-WORKSTATION*
+*-WORKSTATION-LG*
+
+# Lock-System (Kanonische Projekt-Sperren)
+LOCK
+LOCK.*
+LOCK*.txt
+LOCK.user.*
+LOCK.until.*
+LOCK.condition.*
+LOCK.permissions.json
+LOCK-CACHE.md
+
+# Package manager lockfiles policy
+uv.lock
+!package-lock.json
 
 # Interne Arbeits- und Planungsdateien (kein Repo-Inhalt)
 TODO.md

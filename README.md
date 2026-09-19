@@ -6,14 +6,14 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](pyproject.toml)
-[![Pytest: 75 passed](https://img.shields.io/badge/Pytest-75%20passed-brightgreen.svg)](tests/)
+[![Pytest: 89 passed](https://img.shields.io/badge/Pytest-89%20passed-brightgreen.svg)](tests/)
 [![Security: Fail--Closed](https://img.shields.io/badge/Security-Fail--Closed-red.svg)](RELEASE_GATE.md)
 [![GDPR: Art. 4(5)](https://img.shields.io/badge/GDPR-Art._4%285%29_Pseudonymization-green.svg)](#legal-framework-and-gdpr-responsibility)
 [![Local-First: 100% Offline](https://img.shields.io/badge/Privacy-100%25%20Local--First-blue.svg)](#features)
 [![LLM-Ready: llms.txt](https://img.shields.io/badge/LLM--Friendly-llms.txt-blueviolet.svg)](llms.txt)
 [![Language: English](https://img.shields.io/badge/Language-English-blue.svg)](README.md)
 [![Ecosystem: ELLMOS / open-bricks](https://img.shields.io/badge/Ecosystem-ELLMOS%20%2F%20open--bricks-orange.svg)](https://github.com/ellmos-ai)
-[![Checked: 2026-09-10](https://img.shields.io/badge/Checked-2026--09--10-brightgreen.svg)](#security-contract)
+[![Checked: 2026-09-19](https://img.shields.io/badge/Checked-2026--09--19-brightgreen.svg)](#security-contract)
 
 > [!NOTE]
 > **AI Agent & LLM Integration Notice:** `anonymizer` provides a machine-readable specification [`llms.txt`](llms.txt) designed for autonomous AI agents (Claude Code, Antigravity, Open-WebUI). Local AI agents requiring privacy-preserving pre-cleared text inputs prior to sending prompts to external LLMs can utilize `anonymizer` completely locally and offline.
@@ -45,7 +45,7 @@
 
 ## Features
 
-`anonymizer` 0.3.0 pseudonymizes documents (`.txt`, `.md`, `.docx`, `.xlsx`, `.pdf`) completely locally without any cloud dependency.
+`anonymizer` 0.3.1 pseudonymizes documents (`.txt`, `.md`, `.docx`, `.xlsx`, `.pdf`) completely locally without any cloud dependency.
 
 | Feature | Description |
 |---|---|
@@ -254,7 +254,7 @@ sequenceDiagram
 Automatic person name detection relies on installed spaCy models — tested and recommended is `de_core_news_lg` **3.8.0** (spaCy **3.8.14**). Different model versions may yield different POS tags and lemmatizations.
 
 **Important Operational Notice (RUN5 Finding):**
-If the English `en_core_web_lg` model is also installed, it may erroneously tag German running text as `PERSON` — with lemmatization behaviors divergent from German linguistic rules (e.g. retaining capitalization on substantivized prepositions). Pure POS/lemma filtering does not reliably intercept this cross-model pattern. Therefore, version 0.3.0 incorporates model-independent surface hardening (contraction filters, prefix matching, German vocabulary checks).
+If the English `en_core_web_lg` model is also installed, it may erroneously tag German running text as `PERSON` — with lemmatization behaviors divergent from German linguistic rules (e.g. retaining capitalization on substantivized prepositions). Pure POS/lemma filtering does not reliably intercept this cross-model pattern. Therefore, version 0.3.1 incorporates model-independent surface hardening (contraction filters, prefix matching, German vocabulary checks).
 
 Production recommendation: Install `en_core_web_lg` only if English documents are actually processed. For pure German document repositories, `de_core_news_lg` alone is sufficient and avoids cross-contamination.
 
@@ -286,6 +286,9 @@ Actual **content-stream redaction** (`_anonymize_pdf`) requires [PyMuPDF](https:
 
 `anonymizer` **pseudonymizes** documents — it does not anonymize in the absolute legal sense. Under Art. 4(5) GDPR, pseudonymization replaces identifying attributes with a pseudonym without permanently eliminating the personal reference: the encrypted keyfile explicitly allows authorized re-identification (`DocumentDeanonymizer`). Processed documents therefore remain personal data under the GDPR, and legal compliance (Art. 5, 6, 24, 32 GDPR) remains the sole responsibility of the operator.
 
+> [!NOTE]
+> **Statutory Liability Disclaimer (German Law § 521 BGB):** This open-source software is provided free of charge. Under § 521 of the German Civil Code (BGB), liability of the authors and contributors is restricted to intent and gross negligence. The software is provided "as is", without warranty of any kind, express or implied, regarding merchantability, fitness for a particular purpose, or non-infringement.
+
 For **professionals bound by statutory confidentiality duties** (e.g. German § 203 StGB — medical doctors, therapists, attorneys, social workers): using `anonymizer` does not discharge professional secrecy obligations. Sharing pseudonymized documents with third parties must be evaluated independently. The module gives **no guarantee** that all personal data is detected (NER is model-based and fallible). A manual final review before disclosure is always required.
 
 ---
@@ -311,7 +314,7 @@ For **professionals bound by statutory confidentiality duties** (e.g. German § 
 # Bytecode verification
 python -m py_compile anonymizer_modul\core.py
 
-# Full test suite (75 tests)
+# Full test suite (89 contract & unit tests)
 python -m pytest -v
 
 # AGPL boundary guardian test
@@ -325,11 +328,12 @@ Auditing and compliance documents:
 - `RELEASE_GATE.md`: Security release verification gate
 - `SECURITY.md`: Vulnerability reporting and security model
 - `SECURITY_REVIEW_2026-07-16.md`: In-depth GDPR privacy audit
+- `THIRD_PARTY_LICENSES.md`: Comprehensive SBOM and dependency licensing audit
 
 ---
 
 ## License
 
-This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
+This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details. Third-party package licenses and governance boundaries are documented in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 Origin: Extracted from BACH `hub/_services/document/anonymizer_service.py` v1.2.0 and neutralized as an autonomous standalone tool.

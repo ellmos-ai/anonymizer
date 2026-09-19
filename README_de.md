@@ -6,14 +6,14 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](pyproject.toml)
-[![Pytest: 75 passed](https://img.shields.io/badge/Pytest-75%20passed-brightgreen.svg)](tests/)
+[![Pytest: 89 passed](https://img.shields.io/badge/Pytest-89%20passed-brightgreen.svg)](tests/)
 [![Security: Fail--Closed](https://img.shields.io/badge/Security-Fail--Closed-red.svg)](RELEASE_GATE.md)
 [![DSGVO: Art. 4(5)](https://img.shields.io/badge/DSGVO-Art._4%285%29_Pseudonymisierung-green.svg)](#rechtlicher-rahmen-und-verantwortung)
 [![Local-First: 100% Offline](https://img.shields.io/badge/Privacy-100%25%20Local--First-blue.svg)](#funktionsumfang)
 [![LLM-Ready: llms.txt](https://img.shields.io/badge/LLM--Friendly-llms.txt-blueviolet.svg)](llms.txt)
 [![Language: Deutsch](https://img.shields.io/badge/Language-Deutsch-de.svg)](README_de.md)
 [![Ecosystem: ELLMOS / open-bricks](https://img.shields.io/badge/Ecosystem-ELLMOS%20%2F%20open--bricks-orange.svg)](https://github.com/ellmos-ai)
-[![Checked: 2026-09-10](https://img.shields.io/badge/Checked-2026--09--10-brightgreen.svg)](#sicherheitsvertrag)
+[![Checked: 2026-09-19](https://img.shields.io/badge/Checked-2026--09--19-brightgreen.svg)](#sicherheitsvertrag)
 
 > [!NOTE]
 > **KI-Agenten- & LLM-Integration:** `anonymizer` stellt eine maschinenlesbare Spezifikation [`llms.txt`](llms.txt) für autonome Agenten (Claude Code, Antigravity, Open-WebUI) bereit. Lokale Agenten können vertrauliche Klientendaten vor der Übergabe an externe Cloud-LLMs vollständig offline pseudonymisieren.
@@ -45,7 +45,7 @@
 
 ## Funktionsumfang
 
-`anonymizer` 0.3.0 pseudonymisiert Dokumente (`.txt`, `.md`, `.docx`, `.xlsx`, `.pdf`) vollständig lokal und ohne Cloud-Abhängigkeit.
+`anonymizer` 0.3.1 pseudonymisiert Dokumente (`.txt`, `.md`, `.docx`, `.xlsx`, `.pdf`) vollständig lokal ohne jegliche Cloud-Abhängigkeit.
 
 | Feature | Beschreibung |
 |---|---|
@@ -254,7 +254,7 @@ sequenceDiagram
 Die Qualität der automatischen Personennamenerkennung hängt vom installierten spaCy-Modell ab — getestet und empfohlen ist `de_core_news_lg` **3.8.0** (spaCy **3.8.14**). Ältere/neuere Modellversionen können abweichende POS-Tags/Lemmata liefern.
 
 **Wichtiger Betriebshinweis (RUN5-Befund):**
-Ist zusätzlich das englische `en_core_web_lg`-Modell installiert, kann es deutschen Fließtext eigenständig fehlerhaft als `PERSON` taggen — mit Lemmata, die sich nicht wie die deutsche Lemmatisierung verhalten (z. B. bleibt das Lemma einer substantivierten Präposition/eines Verbs bei der englischen Pipeline großgeschrieben). Die reine POS-/Lemma-Prüfung greift gegen dieses Muster nicht zuverlässig; deshalb verfügt Version 0.3.0 über eine vom Modell unabhängige Oberflächen-Härtung (Kontraktionswörter, Gattungsbegriff-Präfixmatch, Vokabular-Check).
+Ist zusätzlich das englische `en_core_web_lg`-Modell installiert, kann es deutschen Fließtext eigenständig fehlerhaft als `PERSON` taggen — mit Lemmata, die sich nicht wie die deutsche Lemmatisierung verhalten (z. B. bleibt das Lemma einer substantivierten Präposition/eines Verbs bei der englischen Pipeline großgeschrieben). Die reine POS-/Lemma-Prüfung greift gegen dieses Muster nicht zuverlässig; deshalb verfügt Version 0.3.1 über eine vom Modell unabhängige Oberflächen-Härtung (Kontraktionswörter, Gattungsbegriff-Präfixmatch, Vokabular-Check).
 
 Empfehlung für Produktivinstallationen: `en_core_web_lg` nur installieren, wenn tatsächlich englischsprachige Dokumente verarbeitet werden — für rein deutsche Aktenbestände genügt `de_core_news_lg` allein.
 
@@ -286,6 +286,9 @@ Die **Schwärzung selbst** (`_anonymize_pdf`) benötigt dagegen [PyMuPDF](https:
 
 `anonymizer` **pseudonymisiert** Dokumente — es anonymisiert im datenschutzrechtlichen Sinn nicht. Nach Art. 4 Nr. 5 DSGVO ersetzt Pseudonymisierung identifizierende Merkmale durch ein Pseudonym, ohne den Personenbezug technisch endgültig aufzuheben: Die verschlüsselte Zuordnungstabelle macht eine Re-Identifizierung durch den Verwender bewusst möglich (`DocumentDeanonymizer`). Die verarbeiteten Dokumente bleiben daher personenbezogene Daten im Sinne der DSGVO, und die Verantwortung für Rechtsgrundlage, Zweckbindung, Speicherbegrenzung und technisch-organisatorische Maßnahmen (Art. 5, 6, 24, 32 DSGVO) verbleibt vollständig beim Verwender.
 
+> [!NOTE]
+> **Haftungsausschluss (§ 521 BGB):** Die Bereitstellung dieser Open-Source-Software erfolgt unentgeltlich. Die Haftung der Urheber und Mitwirkenden ist gemäß § 521 BGB auf Vorsatz und grobe Fahrlässigkeit beschränkt. Die Software wird „wie besehen“ ohne ausdrückliche oder stillschweigende Gewährleistung für Eignung, Vollständigkeit oder Fehlerfreiheit zur Verfügung gestellt.
+
 Für **Berufsgeheimnisträger** (§ 203 StGB, z. B. Ärzt:innen, Psychotherapeut:innen, Rechtsanwält:innen, Sozialarbeiter:innen) gilt: Der Einsatz entbindet nicht von den berufsrechtlichen Schweigepflichten. Die Weitergabe an Dritte bleibt eigenverantwortlich zu prüfen. Das Modul gibt **keine Garantie**, dass sämtliche personenbezogenen Daten lückenlos erkannt werden (NER ist modellbasiert und fehleranfällig). Vor jeder Weitergabe ist eine manuelle Endkontrolle durch den Verwender erforderlich.
 
 ---
@@ -311,7 +314,7 @@ Für **Berufsgeheimnisträger** (§ 203 StGB, z. B. Ärzt:innen, Psychotherapeut
 # Syntaxprüfung
 python -m py_compile anonymizer_modul\core.py
 
-# Vollständige Testsuite ausführen (75 Tests)
+# Vollständige Testsuite ausführen (89 Vertragstests & Modultests)
 python -m pytest -v
 
 # AGPL-Schutzgrenzen-Test
@@ -325,11 +328,12 @@ Prüfstände und Sicherheitsdokumentation:
 - `RELEASE_GATE.md`: Release- und Verifikations-Gate
 - `SECURITY.md`: Sicherheitsmodell und Meldewege
 - `SECURITY_REVIEW_2026-07-16.md`: Detaillierte Datenschutzanalyse
+- `THIRD_PARTY_LICENSES.md`: Vollständige SBOM und Lizenzdokumentation
 
 ---
 
 ## Lizenz
 
-Dieses Projekt ist unter der **MIT-Lizenz** lizenziert — siehe [LICENSE](LICENSE) für Details.
+Dieses Projekt ist unter der **MIT-Lizenz** lizenziert — siehe [LICENSE](LICENSE) für Details. Drittanbieter-Lizenzen und Governance-Grenzen sind in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) dokumentiert.
 
 Ursprung: Extrahiert aus BACH `hub/_services/document/anonymizer_service.py` v1.2.0 und als eigenständiges, modulares Werkzeug neutralisiert.

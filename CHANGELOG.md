@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-19 — Pfad A: CI-Matrix-Härtung, Least-Privilege Permissions, PEP 621 Metadaten & Vertragstests — 0.3.1
+
+- **CI-Matrix- & Least-Privilege-Härtung (`.github/workflows/ci.yml`):**
+  - Top-Level `permissions: contents: read` für Least-Privilege-Sicherheit ergänzt.
+  - Top-Level `concurrency` mit automatischer Stornierung veralteter In-Progress-Läufe hinzugefügt.
+  - Job-Level `timeout-minutes: 15` auf allen Jobs (`test`, `test-pdf-redact`, `lint`, `bandit`) verankert.
+- **Community-Governance-Workflows:**
+  - `.github/workflows/stale.yml` mit 30-Tage Stale- und 7-Tage Close-Regel, Concurrency, `timeout-minutes: 10` und Least-Privilege-Permissions (`issues: write`, `pull-requests: write`) hinzugefügt.
+  - `.github/workflows/welcome.yml` für Erst-Interaktions-Begrüßung von Issue- und PR-Erstellern mit Concurrency, `timeout-minutes: 5` und Least-Privilege-Permissions hinzugefügt.
+- **Multi-Host- & Lock-System-Gitignore:**
+  - `.gitignore` um kanonische Projekt-Sperren (`LOCK`, `LOCK.*`, `LOCK*.txt`, `LOCK.user.*`, `LOCK.until.*`, `LOCK.condition.*`, `LOCK-CACHE.md`), Multi-Host-Konfliktmuster (`*conflicted copy*`, `*-ASUS*`, `*-WORKSTATION*`, `*-Mac Studio*`) und Paketmanager-Regeln (`uv.lock`, `!package-lock.json`) erweitert.
+- **Software Bill of Materials & Lizenzaudit (`THIRD_PARTY_LICENSES.md`):**
+  - Vollständiges Lizenz- und SBOM-Dokument für alle Kern-Abhängigkeiten (`cryptography`, `defusedxml`), optionale Format-Extras (`python-docx`, `pypdf`, `pikepdf`, `openpyxl`, `spacy`), die isolierte AGPL-Grenze (`PyMuPDF` in `pdf-redact`) und Dev-Werkzeuge (`pytest`, `ruff`, `bandit`) erstellt.
+- **PEP 621 Standardisierung (`pyproject.toml`):**
+  - Versionssprung auf `0.3.1`.
+  - `license-files = ["LICENSE", "THIRD_PARTY_LICENSES.md"]` deklariert.
+  - Standardisierte PyPI-Klassifikatoren (Python 3.10-3.13, MIT-Lizenz, OS Independent, Security/Cryptography) ergänzt.
+  - `[project.urls]` um Third-Party Licenses, LLM Ready und German Documentation erweitert.
+  - `[tool.pytest.ini_options]` mit `minversion = "7.0"`, `addopts = "-ra -v"` und `norecursedirs` gehärtet.
+- **Gesetzlicher Haftungsausschluss (§ 521 BGB):**
+  - Gesetzlicher Haftungsausschluss für unentgeltliche Open-Source-Bereitstellung nach deutschem Recht (§ 521 BGB) in `README.md` und `README_de.md` unter Beibehaltung der 12-teiligen Schnellnavigation eingefügt.
+- **Vertragstests & Versionsparität (`tests/test_metadata.py`):**
+  - Vertragstests für CI-Härtung, Community-Workflows, Lock-Schutzmuster in `.gitignore`, Drittanbieter-SBOM, § 521 BGB-Klauseln und synchrone Versionsparität über `pyproject.toml`, `ellmos-module.json`, `ellmos-module.v2.json` und `anonymizer_modul/__init__.py` auf 14 Tests erweitert.
+  - Alle 89 Unit- und Vertragstests grün.
+
 ## 2026-09-10 — Pfad B: Discoverability, Zweisprachige README-Architektur, Sequenzdiagramm & Governance
 
 - **Zweisprachige README-Architektur (Policy P-006):**

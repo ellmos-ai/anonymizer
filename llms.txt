@@ -96,4 +96,4 @@ ellmos anonymizer python
 - `WIRING.md`: Integration & system boundary documentation.
 - `pyproject.toml`: Package dependencies, optional format extras, and entry points.
 
-## Last-checked: 2026-09-10 (Pfad B: Discoverability, bilingual README architecture, sequence diagram, contract tests)
+## Last-checked: 2026-09-19 (Pfad A: Repository hygiene, CI matrix hardening, least-privilege permissions, PEP 621 metadata & contract tests)

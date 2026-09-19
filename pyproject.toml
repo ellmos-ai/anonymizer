@@ -4,10 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anonymizer-modul"
-version = "0.3.0"
+version = "0.3.1"
 description = "Fail-closed Standalone-Anonymizer für personenbezogene Dokumente"
 readme = "README.md"
 license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_LICENSES.md"]
+authors = [
+    { name = "ellmos", email = "info@ellmos.de" },
+    { name = "BACH Contributors" },
+]
 requires-python = ">=3.10"
 keywords = [
     "anonymizer",
@@ -20,7 +25,23 @@ keywords = [
     "docx-anonymization",
     "privacy-first",
     "fail-closed",
-    "offline-first"
+    "offline-first",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Legal Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Text Processing :: Filters",
+    "Typing :: Typed",
 ]
 dependencies = ["cryptography>=41.0", "defusedxml>=0.7"]
 
@@ -31,9 +52,12 @@ Repository = "https://github.com/ellmos-ai/anonymizer.git"
 "Issue Tracker" = "https://github.com/ellmos-ai/anonymizer/issues"
 Changelog = "https://github.com/ellmos-ai/anonymizer/blob/main/CHANGELOG.md"
 Security = "https://github.com/ellmos-ai/anonymizer/blob/main/SECURITY.md"
+"Third-Party Licenses" = "https://github.com/ellmos-ai/anonymizer/blob/main/THIRD_PARTY_LICENSES.md"
 "Parent Organization" = "https://github.com/ellmos-ai"
 "Umbrella Ecosystem" = "https://github.com/open-bricks"
 "Marketing Log" = "https://github.com/ellmos-ai/anonymizer/blob/main/MARKETING-LOG.txt"
+"German Documentation" = "https://github.com/ellmos-ai/anonymizer/blob/main/README_de.md"
+"LLM Ready" = "https://raw.githubusercontent.com/ellmos-ai/anonymizer/main/llms.txt"
 
 [project.optional-dependencies]
 docx  = ["python-docx>=1.0"]
@@ -84,8 +108,19 @@ where = ["."]
 include = ["anonymizer_modul*"]
 
 [tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -v"
 pythonpath = ["."]
 testpaths = ["tests"]
+norecursedirs = [
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
+    "keys",
+    ".anonymizer",
+]
 
 [tool.ruff]
 target-version = "py310"

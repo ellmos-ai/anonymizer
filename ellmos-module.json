@@ -2,7 +2,7 @@
   "$schema": "ellmos-module-v1",
   "name": "anonymizer",
   "display_name": "Anonymizer",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "kind": "standalone-module",
   "visibility": "public",
   "repository": "https://github.com/ellmos-ai/anonymizer",

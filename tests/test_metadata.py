@@ -75,7 +75,7 @@ def test_llms_txt_integrity():
 
     assert "README.md" in content
     assert "README_de.md" in content
-    assert re.search(r"2026-09-\d{2}", content), "llms.txt must contain a valid 2026-09 check date"
+    assert re.search(r"2026-\d{2}-\d{2}", content), "llms.txt must contain a valid check date"
 
 
 def test_pyproject_metadata_urls():
@@ -196,3 +196,18 @@ def test_statutory_bgb_notice_in_readmes():
 
     assert "§ 521 BGB" in readme_en, "English README.md must contain § 521 BGB liability notice"
     assert "§ 521 BGB" in readme_de, "German README_de.md must contain § 521 BGB liability notice"
+
+
+def test_badges_and_ci_workflow_links():
+    readme_en = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    readme_de = (REPO_ROOT / "README_de.md").read_text(encoding="utf-8")
+
+    ci_badge = "https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml/badge.svg"
+    ci_workflow_url = "https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml"
+
+    assert ci_badge in readme_en, "CI badge missing in README.md"
+    assert ci_badge in readme_de, "CI badge missing in README_de.md"
+    assert ci_workflow_url in readme_en, "CI workflow link missing in README.md"
+    assert ci_workflow_url in readme_de, "CI workflow link missing in README_de.md"
+    assert "code style-ruff" in readme_en or "code%20style-ruff" in readme_en
+    assert "code style-ruff" in readme_de or "Code--Stil-ruff" in readme_de

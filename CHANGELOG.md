@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased] — Stand 2026-11-03 — Pfad B: Discoverability, CI Status Badge, Metadaten-Bereinigung & llms.txt Resilienz
+
+- **Discoverability & Web-Sichtbarkeit:**
+  - GitHub-Repository `homepageUrl` auf `https://github.com/ellmos-ai/anonymizer#readme` gesetzt.
+  - Veralteten 404-Link `"Marketing Log"` aus `[project.urls]` in `pyproject.toml` entfernt (`MARKETING-LOG.txt` ist gitignored und existiert bewusst nicht im Repo).
+- **Badges & Visuelle Währung:**
+  - GitHub Actions CI Status-Badge (`[![CI](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml)`) in `README.md` und `README_de.md` ergänzt.
+  - Code-Style Ruff Badge (`[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)`) in beiden READMEs integriert.
+  - Prüfstempel auf den aktuellen Stand `2026-11-03` aktualisiert.
+- **RAG- & Agent-Crawler-Aktualisierung (`llms.txt`):**
+  - Prüfstempel in `llms.txt` auf `2026-11-03` aktualisiert.
+- **Vertragstests (`tests/test_metadata.py`):**
+  - `test_llms_txt_integrity` auf zeitunabhängiges ISO-Datums-Regex (`2026-\d{2}-\d{2}`) gehärtet.
+  - Neuer Vertragstest `test_badges_and_ci_workflow_links` zur Sicherung von CI-Badge und Ruff-Badge in beiden READMEs implementiert.
+
 ## 2026-09-19 — Pfad A: CI-Matrix-Härtung, Least-Privilege Permissions, PEP 621 Metadaten & Vertragstests — 0.3.1
 
 - **CI-Matrix- & Least-Privilege-Härtung (`.github/workflows/ci.yml`):**

@@ -1,4 +1,5 @@
 include README.md
+include README_de.md
 include LICENSE
 include SECURITY.md
 include CHANGELOG.md
@@ -8,8 +9,14 @@ include WIRING.md
 include ellmos-module.json
 include ellmos-module.v2.json
 include SKILL.md
+include llms.txt
+include THIRD_PARTY_LICENSES.md
+include anonymizer_modul/py.typed
+recursive-include assets *.png *.svg
 exclude LOCK*.txt
 global-exclude *.bak *.bak_* *.py[cod]
 prune .pytest_cache
+prune .ruff_cache
 prune __pycache__
 prune tests/__pycache__
+prune anonymizer_modul/__pycache__

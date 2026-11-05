@@ -105,6 +105,9 @@ anonymizer = "anonymizer_modul.core:main"
 where = ["."]
 include = ["anonymizer_modul*"]
 
+[tool.setuptools.package-data]
+anonymizer_modul = ["py.typed"]
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-ra -v"

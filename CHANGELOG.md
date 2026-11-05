@@ -1,6 +1,25 @@
 # Changelog
 
-## [Unreleased] — Stand 2026-11-03 — Pfad B: Discoverability, CI Status Badge, Metadaten-Bereinigung & llms.txt Resilienz
+## [Unreleased]
+
+### 2026-11-05 — Pfad A: CI-Matrix-Härtung (Python 3.10-3.12, pip check, build job), PEP 561 py.typed, MANIFEST.in & Vertragstests
+
+- **CI-Matrix- & Dependency-Härtung (`.github/workflows/ci.yml`):**
+  - Python-Matrix um Mindestversion `3.10` erweitert (`["3.10", "3.11", "3.12"]`), sodass die in `pyproject.toml` definierte Untergrenze (`requires-python = ">=3.10"`) sowie `tomli>=2.0; python_version < '3.11'` in CI real validiert werden.
+  - Setup-Python um Caching (`cache: "pip"`) über alle Jobs (`test`, `test-pdf-redact`, `lint`, `bandit`, `build`) optimiert.
+  - Dependency-Integritätsprüfung (`pip check`) im Test-Job integriert, um Versionskonflikte abzufangen.
+  - Dedizierter Paket-Build-Job (`build:`) ergänzt, der `sdist` und `wheel` via `python -m build` baut und als CI-Gate absichert.
+- **PEP 561 Typisierungs-Standard:**
+  - Typisierungs-Marker `anonymizer_modul/py.typed` hinzugefügt.
+  - In `pyproject.toml` `[tool.setuptools.package-data]` für `anonymizer_modul = ["py.typed"]` hinterlegt zur formalen Erfüllung des deklarierten `"Typing :: Typed"` Classifiers.
+- **Vollständigkeit der Distribution (`MANIFEST.in`):**
+  - `README_de.md`, `llms.txt`, `THIRD_PARTY_LICENSES.md`, `anonymizer_modul/py.typed` und `assets/*.png *.svg` explizit in `MANIFEST.in` aufgenommen.
+  - Cache-Verzeichnisse (`.ruff_cache`, `anonymizer_modul/__pycache__`) in Prune-Regeln aufgenommen.
+- **Erweiterung der Vertragstests (`tests/test_metadata.py`):**
+  - 4 neue Vertragstests implementiert: `test_pep561_typing_marker_and_package_data`, `test_manifest_in_completeness`, `test_ci_matrix_minimum_python_coverage` und `test_pyproject_pep639_and_agpl_isolation`.
+  - Gesamtzahl der Metadaten- und Governance-Vertragstests von 15 auf 19 erhöht (100% bestanden).
+
+### 2026-11-03 — Pfad B: Discoverability, CI Status Badge, Metadaten-Bereinigung & llms.txt Resilienz
 
 - **Discoverability & Web-Sichtbarkeit:**
   - GitHub-Repository `homepageUrl` auf `https://github.com/ellmos-ai/anonymizer#readme` gesetzt.

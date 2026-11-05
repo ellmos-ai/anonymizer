@@ -211,3 +211,49 @@ def test_badges_and_ci_workflow_links():
     assert ci_workflow_url in readme_de, "CI workflow link missing in README_de.md"
     assert "code style-ruff" in readme_en or "code%20style-ruff" in readme_en
     assert "code style-ruff" in readme_de or "Code--Stil-ruff" in readme_de
+
+def test_pep561_typing_marker_and_package_data():
+    typed_marker = REPO_ROOT / "anonymizer_modul" / "py.typed"
+    assert typed_marker.is_file(), "PEP 561 marker anonymizer_modul/py.typed must exist"
+
+    pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'anonymizer_modul = ["py.typed"]' in pyproject, "pyproject.toml must declare package-data for py.typed"
+    assert '"Typing :: Typed"' in pyproject, "pyproject.toml classifiers must declare Typing :: Typed"
+
+
+def test_manifest_in_completeness():
+    manifest_file = REPO_ROOT / "MANIFEST.in"
+    assert manifest_file.is_file(), "MANIFEST.in must exist"
+    content = manifest_file.read_text(encoding="utf-8")
+
+    assert "include README.md" in content
+    assert "include README_de.md" in content
+    assert "include llms.txt" in content
+    assert "include THIRD_PARTY_LICENSES.md" in content
+    assert "include anonymizer_modul/py.typed" in content
+    assert "recursive-include assets *.png *.svg" in content
+    assert "exclude LOCK*.txt" in content
+
+
+def test_ci_matrix_minimum_python_coverage():
+    ci_file = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+    content = ci_file.read_text(encoding="utf-8")
+    pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+
+    assert 'requires-python = ">=3.10"' in pyproject
+    assert 'python-version: ["3.10", "3.11", "3.12"]' in content or "3.10" in content
+    assert "pip check" in content, "ci.yml must verify dependency integrity"
+    assert "build:" in content, "ci.yml must include distribution build job"
+
+
+def test_pyproject_pep639_and_agpl_isolation():
+    pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+
+    # PEP 639 license compliance: license is string, no conflicting OSI classifier
+    assert 'license = "MIT"' in pyproject
+    assert "License :: OSI Approved" not in pyproject
+
+    # E08 invariant: "all" extra must remain AGPL-free
+    assert '"pdf-redact" = ["PyMuPDF' in pyproject
+    all_block = re.search(r'all\s*=\s*\[(.*?)\]', pyproject, re.DOTALL).group(1)
+    assert "PyMuPDF" not in all_block, "'all' extra must never contain PyMuPDF (AGPL isolation)"

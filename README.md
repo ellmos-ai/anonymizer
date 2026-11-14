@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml)
-[![Pytest: 89 passed](https://img.shields.io/badge/Pytest-89%20passed-brightgreen.svg)](tests/)
+[![Pytest: 92 passed](https://img.shields.io/badge/Pytest-92%20passed-brightgreen.svg)](tests/)
 [![Security: Fail--Closed](https://img.shields.io/badge/Security-Fail--Closed-red.svg)](RELEASE_GATE.md)
 [![GDPR: Art. 4(5)](https://img.shields.io/badge/GDPR-Art._4%285%29_Pseudonymization-green.svg)](#legal-framework-and-gdpr-responsibility)
 [![Local-First: 100% Offline](https://img.shields.io/badge/Privacy-100%25%20Local--First-blue.svg)](#features)
@@ -15,7 +15,7 @@
 [![LLM-Ready: llms.txt](https://img.shields.io/badge/LLM--Friendly-llms.txt-blueviolet.svg)](llms.txt)
 [![Language: English](https://img.shields.io/badge/Language-English-blue.svg)](README.md)
 [![Ecosystem: ELLMOS / open-bricks](https://img.shields.io/badge/Ecosystem-ELLMOS%20%2F%20open--bricks-orange.svg)](https://github.com/ellmos-ai)
-[![Checked: 2026-11-03](https://img.shields.io/badge/Checked-2026--11--03-brightgreen.svg)](#security-contract)
+[![Checked: 2026-11-14](https://img.shields.io/badge/Checked-2026--11--14-brightgreen.svg)](#security-contract)
 
 > [!NOTE]
 > **AI Agent & LLM Integration Notice:** `anonymizer` provides a machine-readable specification [`llms.txt`](llms.txt) designed for autonomous AI agents (Claude Code, Antigravity, Open-WebUI). Local AI agents requiring privacy-preserving pre-cleared text inputs prior to sending prompts to external LLMs can utilize `anonymizer` completely locally and offline.
@@ -128,7 +128,7 @@ profile = anonymizer.create_profile(
 result = anonymizer.anonymize_folder(
     folder=r"C:\Input\CaseRecords",
     profile=profile,
-    password="a-strong-local-passphrase",
+    password=os.environ["ANONYMIZER_PASSPHRASE"],
     output_folder=r"C:\Output\K_ABC123",
 )
 
@@ -223,7 +223,7 @@ sequenceDiagram
 
 - `anonymize_folder()` publishes either a fully verified target tree or nothing at all (`All-or-Nothing`). Unsupported files, parser failures, symbolic links, naming collisions, and leftover residue halt publication.
 - Relative folder and file names are pseudonymized. The single-file API rejects identifying filenames because its return value does not transport a new path; for such tasks, the folder workflow is required.
-- Keyfiles are authenticated and encrypted with Fernet; the key is derived via PBKDF2-HMAC-SHA256 (minimum 100,000 iterations) from a passphrase. Storage and ENV overrides within known cloud synchronization paths are actively rejected.
+- Keyfiles are authenticated and encrypted with Fernet; the key is derived via PBKDF2-HMAC-SHA256 (480,000 iterations) from a passphrase. Storage and ENV overrides within known cloud synchronization paths are actively rejected.
 - Deanonymized plaintext folders must not be written to known cloud sync paths.
 - Automatic person name recognition operates fail-closed by default: if spaCy or configured language models are missing, the scan terminates. A reduced mode must be explicitly opted into with `require_ner=False`.
 - The NER name detection structurally validates identified PER spans via Part-of-Speech (`POS`): capitalization in German is **not** an indicator of personal names (every noun is capitalized), so only tokens tagged as proper nouns (`PROPN`) are retained. Overly broad spans are trimmed to their maximum contiguous name subsequence rather than entirely discarded.
@@ -316,7 +316,7 @@ For **professionals bound by statutory confidentiality duties** (e.g. German § 
 # Bytecode verification
 python -m py_compile anonymizer_modul\core.py
 
-# Full test suite (89 contract & unit tests)
+# Full test suite (92 contract & unit tests passed)
 python -m pytest -v
 
 # AGPL boundary guardian test

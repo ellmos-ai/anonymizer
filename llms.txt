@@ -53,7 +53,7 @@ profile = anonymizer.create_profile(
 result = anonymizer.anonymize_folder(
     folder=r"C:\Input\CaseFolder",
     profile=profile,
-    password="strong-local-password",
+    password=os.environ["ANONYMIZER_PASSPHRASE"],
     output_folder=r"C:\Output\K_ABC123",
 )
 if result.errors:
@@ -91,9 +91,11 @@ ellmos anonymizer python
 - `README_de.md`: German complete documentation with synchronized 12-section navigation and full legal analysis.
 - `CHANGELOG.md`: Detailed version history with the reasoning behind each NER hardening and licensing step.
 - `RELEASE_GATE.md`: Security and release verification gate.
-- `SECURITY.md`: Security model and vulnerability boundaries.
+- `SECURITY.md`: Bilingual security model, private vulnerability reporting, and 48h/5d/30d remediation SLAs.
 - `SECURITY_REVIEW_2026-07-16.md`: Detailed privacy and security review.
+- `THIRD_PARTY_LICENSES.md`: Level 1 SBOM and permissive/AGPL boundary audit.
+- `TODO.md`: Standardized 10-gate release readiness status register and open engineering roadmap.
 - `WIRING.md`: Integration & system boundary documentation.
 - `pyproject.toml`: Package dependencies, optional format extras, and entry points.
 
-## Last-checked: 2026-11-03 (Pfad B: Discoverability audit, CI status badge, cleaned metadata URLs, and bilingual sync)
+## Last-checked: 2026-11-14 (AI Security & Dependency Audit: 10/10 Final Gate PASS, bilingual SECURITY.md SLAs, Dependabot supply-chain, Level 1 SBOM re-audit)

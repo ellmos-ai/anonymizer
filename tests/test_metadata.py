@@ -257,3 +257,161 @@ def test_pyproject_pep639_and_agpl_isolation():
     assert '"pdf-redact" = ["PyMuPDF' in pyproject
     all_block = re.search(r'all\s*=\s*\[(.*?)\]', pyproject, re.DOTALL).group(1)
     assert "PyMuPDF" not in all_block, "'all' extra must never contain PyMuPDF (AGPL isolation)"
+
+
+def test_security_policy_sla_and_private_reporting():
+    security_file = REPO_ROOT / "SECURITY.md"
+    assert security_file.is_file(), "SECURITY.md must exist at repo root"
+    content = security_file.read_text(encoding="utf-8")
+
+    assert "0.3.1" in content
+    assert "https://github.com/ellmos-ai/anonymizer/security/advisories/new" in content
+    assert "INV-SLA-09" in content
+    assert "INV-SLA-10" in content
+    assert "48 hours" in content and "48 Stunden" in content
+    assert "5 business days" in content and "5 Werktagen" in content
+    assert "30 calendar days" in content and "30 Kalendertagen" in content
+    assert "kein eigenes Git-Repository" not in content
+    assert "Version 0.3.0 ist der einzige" not in content
+
+
+def test_dependabot_supply_chain_config():
+    dependabot = REPO_ROOT / ".github" / "dependabot.yml"
+    assert dependabot.is_file(), ".github/dependabot.yml must exist"
+    content = dependabot.read_text(encoding="utf-8")
+
+    assert 'package-ecosystem: "pip"' in content
+    assert 'package-ecosystem: "github-actions"' in content
+    assert 'interval: "weekly"' in content
+    assert "open-pull-requests-limit:" in content
+
+
+def test_gitignore_security_and_gate_entries():
+    gitignore = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8")
+    lines = {ln.strip() for ln in gitignore.splitlines() if ln.strip() and not ln.startswith("#")}
+
+    for required in (
+        "__pycache__/",
+        "*.pyc",
+        ".env",
+        "*.db",
+        ".venv/",
+        ".idea/",
+        ".vscode/",
+        "data/",
+        "keys/",
+        "*.schluessel.enc",
+        "*.pem",
+        "*.p12",
+        "*.pfx",
+        "*.secret",
+        "*.token",
+        "id_rsa*",
+        "id_ed25519*",
+        "*-IDEAPAD-GEI*",
+        "CONFLICT_REVIEW_LOG*",
+    ):
+        assert required in lines, f"Missing security/gate entry in .gitignore: {required}"
+
+    assert "TODO.md" not in lines, "Public 10-gate TODO.md must not be excluded by .gitignore"
+
+
+def test_todo_status_table_and_zero_secrets_or_personal_paths():
+    todo_file = REPO_ROOT / "TODO.md"
+    assert todo_file.is_file(), "TODO.md must exist at repo root"
+    todo_text = todo_file.read_text(encoding="utf-8")
+    assert "## STATUS" in todo_text
+    assert "| Category | Status | Notes |" in todo_text
+    assert "10/10" in todo_text
+
+    secret_assign = re.compile(
+        r"(?:API_KEY|TOKEN|PASSWORD|SECRET|PRIVATE_KEY)\s*=\s*"
+        r'(?P<q>["\'])(?P<val>[^"\']{8,})(?P=q)',
+        re.IGNORECASE,
+    )
+    token_patterns = [
+        re.compile(r"sk-[a-zA-Z0-9]{20,}"),
+        re.compile(r"ghp_[a-zA-Z0-9]{36,}"),
+        re.compile(r"gho_[a-zA-Z0-9]{36,}"),
+        re.compile(r"-----BEGIN " + r"[A-Z0-9_\s-]*PRIVATE KEY-----"),
+    ]
+    personal_paths = [
+        re.compile(r"C:[\\/]+Users[\\/]+(?!Public\b|Default\b)[A-Za-z0-9._-]+", re.IGNORECASE),
+        re.compile(r"/c/Users/(?!Public\b|Default\b)[A-Za-z0-9._-]+", re.IGNORECASE),
+        re.compile(r"/home/(?!runner\b)[A-Za-z0-9._-]+", re.IGNORECASE),
+    ]
+    skip_dirs = {
+        ".git",
+        ".pytest_cache",
+        ".ruff_cache",
+        "__pycache__",
+        ".venv",
+        "venv",
+        "env",
+        "build",
+        "dist",
+        "anonymizer_modul.egg-info",
+        "_after-care",
+        "_intern",
+        "keys",
+        "klienten",
+        "_ausgabe",
+        "data",
+        ".anonymizer",
+        ".gemini",
+        ".antigravity",
+        ".claude",
+        ".cursor",
+        ".copilot",
+    }
+    binary_exts = {
+        ".png",
+        ".svg",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".ico",
+        ".pdf",
+        ".whl",
+        ".gz",
+        ".zip",
+        ".pyc",
+        ".pyo",
+        ".pyd",
+        ".db",
+        ".sqlite",
+        ".sqlite3",
+        ".enc",
+        ".bak",
+        ".tmp",
+    }
+    sentinels = {"CHANGE-ME-IN-PRODUCTION"}
+
+    for path in REPO_ROOT.rglob("*"):
+        if not path.is_file():
+            continue
+        rel_parts = path.relative_to(REPO_ROOT).parts
+        if any(part in skip_dirs or part.endswith(".egg-info") for part in rel_parts):
+            continue
+        if path.name in {
+            "MARKETING-LOG.txt",
+            "REPO.pointer.json",
+            "anonymizer.repo.md",
+            "pytest_result.txt",
+        }:
+            continue
+        if path.name.startswith(("LOCK", "CONFLICT_REVIEW_LOG")):
+            continue
+        if path.suffix.lower() in binary_exts:
+            continue
+
+        rel_str = path.relative_to(REPO_ROOT).as_posix()
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for match in secret_assign.finditer(line):
+                assert match.group("val") in sentinels, (
+                    f"Non-sentinel secret assignment in {rel_str}:{lineno}"
+                )
+            for tok_re in token_patterns:
+                assert not tok_re.search(line), f"Secret token pattern in {rel_str}:{lineno}"
+            for path_re in personal_paths:
+                assert not path_re.search(line), f"Hardcoded personal path in {rel_str}:{lineno}"

@@ -1141,7 +1141,7 @@ class TestPdfBoundary(unittest.TestCase):
             anonymizer = DocumentAnonymizer(require_ner=False)
             with mock.patch.object(core, "PIKEPDF_AVAILABLE", False):
                 success, count = anonymizer._anonymize_pdf(
-                    path, profile(), encrypt_password="TestPasswort_2026!"
+                    path, profile(), encrypt_password="CHANGE-ME-IN-PRODUCTION"
                 )
             self.assertFalse(success)
             self.assertEqual(count, 0)

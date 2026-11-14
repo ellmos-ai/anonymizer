@@ -6,6 +6,7 @@ include CHANGELOG.md
 include RELEASE_GATE.md
 include SECURITY_REVIEW_2026-07-16.md
 include WIRING.md
+include TODO.md
 include ellmos-module.json
 include ellmos-module.v2.json
 include SKILL.md
@@ -15,6 +16,7 @@ include anonymizer_modul/py.typed
 recursive-include assets *.png *.svg
 exclude LOCK*.txt
 global-exclude *.bak *.bak_* *.py[cod]
+prune .github
 prune .pytest_cache
 prune .ruff_cache
 prune __pycache__

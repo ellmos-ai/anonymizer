@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+### 2026-11-14 — AI Security & Dependency Audit: Final Gate Check Härtung (10/10 PASS), Zweisprachige SECURITY.md (48h/5d/30d SLA), Dependabot Supply-Chain, Level 1 SBOM Re-Audit & Vertragstests
+
+- **Final Gate Check Härtung (`10 PASS, 0 FAIL, 0 WARN`):**
+  - **Gate 1 (`.gitignore`):** Fehlende Release-Gate-Pflichtmuster (`*.pyc`, `.env`, `data/`) sowie erweiterte Exklusionen für Umgebungsvariablen (`.env.local`, `.env.*`), Paketmanager-Zugangsdaten (`.npmrc`, `.pypirc`), kryptografische Schlüssel, Zertifikate und Tokens (`*.pem`, `*.p12`, `*.pfx`, `*.crt`, `*.cer`, `*.cert`, `*.csr`, `*.secret`, `*.token`, `credentials.json`, `secrets.json`, `token.json`, `tokens.json`, `id_rsa*`, `id_ed25519*`, `id_ecdsa*`, `id_dsa*`), SQLite-Dateien (`*.sqlite`, `*.sqlite3`) und Multi-Host-Artefakte (`*-IDEAPAD-GEI*`, `CONFLICT_REVIEW_LOG*`) verankert; Ausschluss von `TODO.md` aufgehoben.
+  - **Gate 6 (Secret-Hygiene in Beispielen & Tests):** Literale Beispiel-Passphrasen in `README.md`, `README_de.md` und `llms.txt` durch sichere Umgebungsvariablen-Übergabe (`os.environ["ANONYMIZER_PASSPHRASE"]`) ersetzt; Test-Fixture in `tests/test_security_boundaries.py` auf den kanonischen Test-Sentinel `"CHANGE-ME-IN-PRODUCTION"` umgestellt. Dokumentation der tatsächlichen PBKDF2-HMAC-SHA256-Iterationszahl (`480.000`) in beiden READMEs präzisiert.
+  - **Gate 10 (`TODO.md`):** Öffentliches, pfadfreies Aufgabenregister `TODO.md` mit standardisierter 10-Gate `## STATUS`-Tabelle (`10/10 Gates PASS`) etabliert und in `MANIFEST.in` aufgenommen (`prune .github` ergänzt).
+- **Sicherheitsrichtlinie & SLA-Verankerung (`SECURITY.md`):**
+  - Veraltete Angaben (`Version 0.3.0`, „kein eigenes Git-Repository“) bereinigt und auf eine zweisprachige (EN/DE) Sicherheits- und Datenschutzrichtlinie für `v0.3.1` umgestellt.
+  - Privater Meldeweg via GitHub Security Advisories (`https://github.com/ellmos-ai/anonymizer/security/advisories/new`) sowie verbindliche Reaktions- und Behebungsfristen (`INV-SLA-10`: 48h Eingangsbestätigung & 30 Kalendertage Behebungszusage; `INV-SLA-09`: 5 Werktage Triage) verankert.
+- **Supply-Chain & Level 1 SBOM (`THIRD_PARTY_LICENSES.md`, `.github/dependabot.yml`, `SKILL.md`):**
+  - `.github/dependabot.yml` für wöchentliche Sicherheits- und Versionsupdates über `pip` und `github-actions` (`open-pull-requests-limit: 5`) eingerichtet.
+  - `THIRD_PARTY_LICENSES.md` auf Re-Audit-Stand `2026-11-14` gebracht (inkl. Invarianten-Übersicht, `tomli`-Test-Fallback und E08-AGPL-Quarantäne-Nachweis).
+  - `SKILL.md`-Metadaten (`visibility: public`, Abhängigkeiten `defusedxml` & `spacy`, Changelog `0.3.0`/`0.3.1`) mit den Modulmanifesten synchronisiert; Modulversion `0.3.1` strikt eingefroren.
+- **Vertragstests (`tests/test_metadata.py`):**
+  - 4 neue Sicherheits- und Governance-Vertragstests ergänzt (`test_security_policy_sla_and_private_reporting`, `test_dependabot_supply_chain_config`, `test_gitignore_security_and_gate_entries`, `test_todo_status_table_and_zero_secrets_or_personal_paths`); Metadaten-Vertragstests auf 23 erhöht (gemessene Gesamtsuite lokal: 92 passed, 9 skipped, 3 subtests passed).
+
 ### 2026-11-05 — Pfad A: CI-Matrix-Härtung (Python 3.10-3.12, pip check, build job), PEP 561 py.typed, MANIFEST.in & Vertragstests
 
 - **CI-Matrix- & Dependency-Härtung (`.github/workflows/ci.yml`):**

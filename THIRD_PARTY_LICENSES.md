@@ -1,6 +1,17 @@
-# Third-Party Software Licenses and Dependencies
+# Third-Party Software Licenses and Dependencies (Level 1 SBOM)
 
-This document provides a comprehensive inventory of third-party software packages and libraries utilized by `anonymizer` (`anonymizer-modul`), along with their respective licensing conditions and governance boundaries.
+**Module:** `anonymizer` (`anonymizer-modul`) · **Version:** `0.3.1` · **Re-Audit:** `2026-11-14`
+
+This document provides the Software Bill of Materials (Level 1 SBOM) inventory of third-party software packages and libraries utilized by `anonymizer` (`anonymizer-modul`), along with their respective licensing conditions, supply-chain security posture, and governance boundaries.
+
+## Security & License Governance Summary
+
+| Invariant | Status | Verification Evidence |
+|---|---|---|
+| Core & `[all]` Permissive Purity | **PASS (0% Copyleft / 0% AGPL)** | All core and `[all]` dependencies use MIT, BSD-3-Clause, Apache-2.0, PSF-2.0, or file-level MPL-2.0 (`tests/test_no_agpl.py`) |
+| AGPL Quarantine (`INV-LOCAL-08`) | **PASS (Decision E08)** | `PyMuPDF` (AGPL-3.0) is strictly isolated in optional extra `[pdf-redact]` and confined to `_anonymize_pdf()` |
+| Dependency Integrity & Automated Supply Chain | **PASS** | Verified via `pip check` in CI (`Python 3.10–3.12`) and weekly `.github/dependabot.yml` monitoring (`pip` + `github-actions`) |
+| Vulnerability Disclosure & Remediation SLA | **PASS (`INV-SLA-09` / `INV-SLA-10`)** | 48h acknowledgement, 5 business days triage, 30 calendar days remediation commitment in [`SECURITY.md`](SECURITY.md) |
 
 ## Primary Project License
 
@@ -38,7 +49,7 @@ These libraries are mandatory for the baseline operation of `anonymizer` (authen
 
 | Package | Minimum Version | License | Upstream Link | Purpose in `anonymizer` |
 |---|---|---|---|---|
-| `cryptography` | `>=41.0` | Apache-2.0 / BSD-3-Clause | [GitHub](https://github.com/pyca/cryptography) | Authenticated Fernet encryption with PBKDF2-HMAC-SHA256 key derivation for client keyfiles. |
+| `cryptography` | `>=41.0` | Apache-2.0 / BSD-3-Clause | [GitHub](https://github.com/pyca/cryptography) | Authenticated Fernet encryption with PBKDF2-HMAC-SHA256 (`480,000` iterations) key derivation for client keyfiles. |
 | `defusedxml` | `>=0.7` | Python Software Foundation (PSF-2.0) | [GitHub](https://github.com/tiran/defusedxml) | Defensively parsing OOXML XML trees in DOCX and XLSX against billion-laughs and entity-expansion attacks. |
 
 ---
@@ -79,3 +90,4 @@ In accordance with **Architectural Decision E08** (2026-08-18), PyMuPDF is stric
 | `bandit` | Apache-2.0 | Automated AST security and vulnerability linter |
 | `build` | MIT License | PEP 517 build frontend |
 | `twine` | Apache-2.0 | Distribution package validation and check utility |
+| `tomli` | MIT License | TOML parser fallback on Python `< 3.11` during test execution |

@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml)
-[![Pytest: 89 passed](https://img.shields.io/badge/Pytest-89%20passed-brightgreen.svg)](tests/)
+[![Pytest: 92 passed](https://img.shields.io/badge/Pytest-92%20passed-brightgreen.svg)](tests/)
 [![Security: Fail--Closed](https://img.shields.io/badge/Security-Fail--Closed-red.svg)](RELEASE_GATE.md)
 [![DSGVO: Art. 4(5)](https://img.shields.io/badge/DSGVO-Art._4%285%29_Pseudonymisierung-green.svg)](#rechtlicher-rahmen-und-verantwortung)
 [![Local-First: 100% Offline](https://img.shields.io/badge/Privacy-100%25%20Local--First-blue.svg)](#funktionsumfang)
@@ -15,7 +15,7 @@
 [![LLM-Ready: llms.txt](https://img.shields.io/badge/LLM--Friendly-llms.txt-blueviolet.svg)](llms.txt)
 [![Language: Deutsch](https://img.shields.io/badge/Language-Deutsch-de.svg)](README_de.md)
 [![Ecosystem: ELLMOS / open-bricks](https://img.shields.io/badge/Ecosystem-ELLMOS%20%2F%20open--bricks-orange.svg)](https://github.com/ellmos-ai)
-[![Geprüft: 2026-11-03](https://img.shields.io/badge/Gepr%C3%BCft-2026--11--03-brightgreen.svg)](#sicherheitsvertrag)
+[![Geprüft: 2026-11-14](https://img.shields.io/badge/Gepr%C3%BCft-2026--11--14-brightgreen.svg)](#sicherheitsvertrag)
 
 > [!NOTE]
 > **KI-Agenten- & LLM-Integration:** `anonymizer` stellt eine maschinenlesbare Spezifikation [`llms.txt`](llms.txt) für autonome Agenten (Claude Code, Antigravity, Open-WebUI) bereit. Lokale Agenten können vertrauliche Klientendaten vor der Übergabe an externe Cloud-LLMs vollständig offline pseudonymisieren.
@@ -128,7 +128,7 @@ profile = anonymizer.create_profile(
 result = anonymizer.anonymize_folder(
     folder=r"C:\Eingang\Fallakte",
     profile=profile,
-    password="ein-sicheres-lokales-passwort",
+    password=os.environ["ANONYMIZER_PASSPHRASE"],
     output_folder=r"C:\Ausgang\K_ABC123",
 )
 
@@ -223,7 +223,7 @@ sequenceDiagram
 
 - `anonymize_folder()` veröffentlicht entweder einen vollständig geprüften Zielbaum oder gar keinen (`All-or-Nothing`). Nicht unterstützte Dateien, Parserfehler, symbolische Links, Namenskollisionen und Restdaten stoppen die Veröffentlichung.
 - Relative Ordner- und Dateinamen werden pseudonymisiert. Die Einzeldatei-API verweigert identifizierende Dateinamen, da ihr Rückgabewert keinen neuen Pfad transportiert; für solche Eingaben ist der Ordner-Workflow vorgesehen.
-- Schlüsseldateien werden mit Fernet authentifiziert verschlüsselt; der Schlüssel wird per PBKDF2-HMAC-SHA256 (mindestens 100.000 Iterationen) aus einem Passwort abgeleitet. Die Ablage und ENV-Overrides in bekannten Cloud-Sync-Pfaden werden aktiv abgelehnt.
+- Schlüsseldateien werden mit Fernet authentifiziert verschlüsselt; der Schlüssel wird per PBKDF2-HMAC-SHA256 (480.000 Iterationen) aus einem Passwort abgeleitet. Die Ablage und ENV-Overrides in bekannten Cloud-Sync-Pfaden werden aktiv abgelehnt.
 - De-anonymisierte Klartextordner dürfen nicht in bekannte Cloud-Sync-Pfade geschrieben werden.
 - Die automatische Personennamenerkennung arbeitet standardmäßig fail-closed: Fehlen spaCy oder die konfigurierten Modelle, bricht der Scan ab. Ein reduzierter Modus muss explizit mit `require_ner=False` gewählt werden.
 - Die NER-Personennamenerkennung validiert erkannte PER-Spans strukturell über die Wortart (POS): Großschreibung ist im Deutschen **kein** Personen-Signal (jedes Substantiv wird großgeschrieben), daher zählen nur als Eigenname (`PROPN`) getaggte Tokens als Namensbestandteil. Ein zu weit gefasster NER-Span wird auf seine maximale zusammenhängende Namens-Teilsequenz gekürzt statt ganz verworfen.
@@ -316,7 +316,7 @@ Für **Berufsgeheimnisträger** (§ 203 StGB, z. B. Ärzt:innen, Psychotherapeut
 # Syntaxprüfung
 python -m py_compile anonymizer_modul\core.py
 
-# Vollständige Testsuite ausführen (89 Vertragstests & Modultests)
+# Vollständige Testsuite ausführen (92 Vertragstests & Modultests bestanden)
 python -m pytest -v
 
 # AGPL-Schutzgrenzen-Test

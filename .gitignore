@@ -3,17 +3,49 @@ keys/
 *.schluessel.enc
 *.enc
 *.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.cert
+*.csr
+*.secret
+*.token
+credentials.json
+secrets.json
+token.json
+tokens.json
+*secret*.json
+*token*.json
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+*recovery*code*.txt
 
-# Klienten-Datenbank und Ausgaben
+# Umgebungsvariablen und Paketmanager-Zugangsdaten
+.env
+.env.local
+.env.*
+!.env.example
+.npmrc
+.pypirc
+
+# Klienten-Datenbank, lokale Datenordner und Ausgaben
 *.db
 *.db-shm
 *.db-wal
+*.sqlite
+*.sqlite3
+data/
 .anonymizer/
 klienten/
 _ausgabe/
 
 # Python
 __pycache__/
+*.pyc
 *.py[cod]
 *.pyo
 *.pyd
@@ -32,13 +64,18 @@ env/
 .profil.json
 *.profil.json
 
-# IDE und System
+# IDE, Agenten-Arbeitsverzeichnisse und System
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
 .idea/
 .vscode/
+.gemini/
+.antigravity/
+.claude/
+.cursor/
+.copilot/
 *.orig
 *.rej
 
@@ -49,14 +86,16 @@ Thumbs.db
 htmlcov/
 .coverage
 coverage.xml
+pytest_result.txt
 
 # Lokale Sicherungen, Locks & Cloud-Sync-Artefakte
 *.bak
 *.bak_*
+*.tmp
 PRIVATE.txt
 _intern/
 
-# Multi-Host Synchronisations-Konflikte
+# Multi-Host Synchronisations-Konflikte & Flotten-Artefakte
 *conflicted copy*
 * (Kopie)*
 * (Copy)*
@@ -67,6 +106,9 @@ _intern/
 *-ASUS-GEI*
 *-WORKSTATION*
 *-WORKSTATION-LG*
+*-IDEAPAD-GEI*
+*-IDEAPAD-GEI.*
+CONFLICT_REVIEW_LOG*
 
 # Lock-System (Kanonische Projekt-Sperren)
 LOCK
@@ -77,12 +119,12 @@ LOCK.until.*
 LOCK.condition.*
 LOCK.permissions.json
 LOCK-CACHE.md
+LOCK-CACHE*
 
 # Package manager lockfiles policy
 uv.lock
 !package-lock.json
 
-# Interne Arbeits- und Planungsdateien (kein Repo-Inhalt)
-TODO.md
+# Interne Marketing- und Pflegeprotokolle (kein Repo-Inhalt)
 MARKETING-LOG.txt
 _after-care/

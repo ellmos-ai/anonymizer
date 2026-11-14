@@ -3,29 +3,32 @@ name: anonymizer
 version: "0.3.1"
 type: standalone-module
 standalone: true
-visibility: private
+visibility: public
 provenance: "Extrahiert aus BACH hub/_services/document/anonymizer_service.py v1.2.0"
 dependencies:
   required:
-    - cryptography       # authentifizierte Fernet-Schlüsseldateien
+    - cryptography       # authentifizierte Fernet-Schlüsseldateien (PBKDF2-HMAC-SHA256, 480.000 Iterationen)
+    - defusedxml         # gehärtetes OOXML-Parsing (DOCX/XLSX) gegen XML-Entity-Angriffe
   optional:
     - python-docx        # Word-Dokumente
     - pypdf              # PDF-Scan (BSD-3-Clause)
     - pikepdf            # PDF-Verschlüsselung (MPL-2.0)
     - openpyxl           # Excel
+    - spacy              # NER-Personennamenerkennung (de_core_news_lg)
     - PyMuPDF            # NUR PDF-Schwärzung, Extra "pdf-redact" (AGPL-3.0,
-                          # bewusst getrennt von "pdf"/"all" -- E08 2026-08-18)
+                         # bewusst getrennt von "pdf"/"all" -- E08 2026-08-18)
 tags:
   - anonymisierung
   - datenschutz
   - pseudonymisierung
   - klienten
   - foerderplanung
-  - privat
+  - fail-closed
 description: |
-  PRIVAT — Standalone-Anonymizer für klientenbezogene Dokumente.
+  Fail-closed Standalone-Anonymizer für personenbezogene Dokumente (MIT-lizenziert).
   Pseudonymisiert personenbezogene Daten (Namen, Geburtsdaten, Adressen, Telefon, E-Mail)
-  konsistent über mehrere Dateien. Authentifizierte lokale Schlüsselspeicherung.
+  konsistent und vollständig lokal über mehrere Dateien; verarbeitete Klientendaten und
+  .schluessel.enc-Schlüsseldateien bleiben strikt lokal außerhalb von Cloud-Sync-Pfaden.
   Unterstützt Text, DOCX, PDF und XLSX mit fail-closed Medien- und Restdatenkontrollen.
   Vollständig ohne BACH lauffähig.
 ---
@@ -72,7 +75,7 @@ os.environ["ANONYMIZER_HOME"] = r"C:\_Local_Anon\output"
 
 - Schlüssel (`.schluessel.enc`) NIEMALS in OneDrive — lokaler Speicher unter `%LOCALAPPDATA%\anonymizer\keys`
 - Kein echter Personenname in Code, Tests oder Commits
-- `.gitignore` schließt `keys/`, `*.enc`, `*.db` aus
+- `.gitignore` schließt `keys/`, `*.enc`, `*.db`, `.env` und `data/` aus
 - `result.errors` ist ein harter Stop; bei Fehlern wird kein Zielbaum veröffentlicht
 - Ohne spaCy/NER bricht der Standard-Scan ab; reduzierter Modus nur nach bewusster Prüfung
 - Bild-/Medieninhalte werden ohne gesonderten OCR-Workflow abgelehnt
@@ -81,6 +84,8 @@ os.environ["ANONYMIZER_HOME"] = r"C:\_Local_Anon\output"
 
 | Version | Datum | Änderung |
 |---|---|---|
+| 0.3.1 | 2026-11-14 | Security-/Dependency-Audit (`10/10` Release-Gates, zweisprachige `SECURITY.md` mit 48h/5d/30d-SLA, Dependabot, PEP 561 `py.typed`) |
+| 0.3.0 | 2026-08-18 | Lizenzgrenze Entscheidung E08: PDF-Scan über `pypdf`, `PyMuPDF` (AGPL-3.0) isoliert im Extra `pdf-redact` |
 | 0.2.5 | 2026-07-23 | Modellversions-robuste Oberflächen-Härtung (RUN5: englisches Modell taggt Deutsch fehlerhaft) |
 | 0.2.4 | 2026-07-23 | Mehrwort-Span-Härtung: Gattungsbegriffe/substantivierte Verben auch bei PROPN-Fehltagging gekürzt (RUN4) |
 | 0.2.3 | 2026-07-23 | Anker-Prinzip gegen NER-Overblocking (RUN3-Regression zu 0.2.2 behoben) |

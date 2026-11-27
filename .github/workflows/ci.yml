@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v7
 
@@ -143,3 +143,7 @@ jobs:
 
       - name: Build sdist and wheel
         run: python -m build
+
+      - name: Verify wheel packaging integrity
+        run: |
+          python -c "import glob, zipfile; w = glob.glob('dist/*.whl')[0]; names = zipfile.ZipFile(w).namelist(); assert 'anonymizer_modul/py.typed' in names, names; assert any(n.endswith('LICENSE') for n in names), names; assert any(n.endswith('THIRD_PARTY_LICENSES.md') for n in names), names; print('Wheel integrity verified:', w)"

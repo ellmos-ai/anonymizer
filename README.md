@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml)
-[![Pytest: 95 passed](https://img.shields.io/badge/Pytest-95%20passed-brightgreen.svg)](tests/)
+[![Pytest: 96 passed](https://img.shields.io/badge/Pytest-96%20passed-brightgreen.svg)](tests/)
 [![Security: Fail--Closed](https://img.shields.io/badge/Security-Fail--Closed-red.svg)](RELEASE_GATE.md)
 [![GDPR: Art. 4(5)](https://img.shields.io/badge/GDPR-Art._4%285%29_Pseudonymization-green.svg)](#legal-framework-and-gdpr-responsibility)
 [![Local-First: 100% Offline](https://img.shields.io/badge/Privacy-100%25%20Local--First-blue.svg)](#features)
@@ -316,7 +316,7 @@ For **professionals bound by statutory confidentiality duties** (e.g. German § 
 # Bytecode verification
 python -m py_compile anonymizer_modul\core.py
 
-# Full test suite (95 contract & unit tests passed)
+# Full test suite (96 contract & unit tests passed)
 python -m pytest -v
 
 # AGPL boundary guardian test

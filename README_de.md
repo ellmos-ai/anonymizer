@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml)
-[![Pytest: 95 passed](https://img.shields.io/badge/Pytest-95%20passed-brightgreen.svg)](tests/)
+[![Pytest: 96 passed](https://img.shields.io/badge/Pytest-96%20passed-brightgreen.svg)](tests/)
 [![Security: Fail--Closed](https://img.shields.io/badge/Security-Fail--Closed-red.svg)](RELEASE_GATE.md)
 [![DSGVO: Art. 4(5)](https://img.shields.io/badge/DSGVO-Art._4%285%29_Pseudonymisierung-green.svg)](#rechtlicher-rahmen-und-verantwortung)
 [![Local-First: 100% Offline](https://img.shields.io/badge/Privacy-100%25%20Local--First-blue.svg)](#funktionsumfang)
@@ -316,7 +316,7 @@ Für **Berufsgeheimnisträger** (§ 203 StGB, z. B. Ärzt:innen, Psychotherapeut
 # Syntaxprüfung
 python -m py_compile anonymizer_modul\core.py
 
-# Vollständige Testsuite ausführen (95 Vertragstests & Modultests bestanden)
+# Vollständige Testsuite ausführen (96 Vertragstests & Modultests bestanden)
 python -m pytest -v
 
 # AGPL-Schutzgrenzen-Test

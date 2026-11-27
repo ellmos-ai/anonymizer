@@ -454,3 +454,12 @@ def test_ci_python_313_and_wheel_verification():
     assert '"3.13"' in ci_text
     assert "anonymizer_modul/py.typed" in ci_text
     assert "Verify wheel packaging integrity" in ci_text
+
+
+def test_generate_fake_date_never_zero_offset():
+    from anonymizer_modul.core import _generate_fake_date_same_age
+
+    for _ in range(500):
+        fake, offset = _generate_fake_date_same_age("15.03.2016")
+        assert offset != 0
+        assert fake != "15.03.2016"

@@ -4,8 +4,9 @@
 
 ### 2026-11-27 — AI Modules Care: CLI-Versionsparität (`0.3.1`), Umlaut-Korrektur, PEP-639-Build-Fix (`setuptools>=77.0.3`), Pytest-Strictness & CI-Wheel-Check
 
-- **CLI-Versionsparität & UTF-8-Umlaute (`anonymizer_modul/core.py`):**
+- **CLI-Versionsparität, Geburtsdatums-Offset & UTF-8-Umlaute (`anonymizer_modul/core.py`):**
   - Veraltete Parser-Beschreibung `Anonymizer-Modul v0.2.5` auf dynamisches `anonymizer_modul.__version__` (`0.3.1`) umgestellt und explizites `--version`-Flag ergänzt.
+  - `_generate_fake_date_same_age()` auf strikt ungleich-null Tagesversatz (`[-150..-1] ∪ [1..150]`) gehärtet, sodass bei `offset == 0` niemals das echte Geburtsdatum unverändert erhalten bleibt (entdeckt durch neue Python-3.13-CI-Matrix).
   - Deutsche spaCy-Warnmeldung (`verfuegbar` -> `verfügbar`) auf echte UTF-8-Umlaute korrigiert.
 - **PEP-639-Build & Pytest-Strictness (`pyproject.toml`):**
   - `[build-system].requires` für PEP-639-`license-files` von `setuptools>=68` auf `setuptools>=77.0.3` angehoben.
@@ -13,7 +14,7 @@
 - **CI-Matrix & Wheel-Verifikation (`.github/workflows/ci.yml`):**
   - Python-Testmatrix um `3.13` (`["3.10", "3.11", "3.12", "3.13"]`) erweitert und im `build`-Job eine Wheel-Inhaltsprüfung (`anonymizer_modul/py.typed`, `LICENSE`, `THIRD_PARTY_LICENSES.md`) verankert.
 - **Vertragstests & Doku (`tests/test_metadata.py`, `README.md`, `README_de.md`, `llms.txt`, `TODO.md`):**
-  - 3 neue Vertragstests ergänzt (`test_cli_help_and_version_parity`, `test_pyproject_build_requires_pep639_and_pytest_strictness`, `test_ci_python_313_and_wheel_verification`; Gesamtsuite: `95 passed, 9 skipped`, Modulversion `0.3.1` strikt eingefroren).
+  - 4 neue Vertragstests ergänzt (`test_cli_help_and_version_parity`, `test_pyproject_build_requires_pep639_and_pytest_strictness`, `test_ci_python_313_and_wheel_verification`, `test_generate_fake_date_never_zero_offset`; Gesamtsuite: `96 passed, 9 skipped`, Modulversion `0.3.1` strikt eingefroren).
 
 ### 2026-11-14 — AI Security & Dependency Audit: Final Gate Check Härtung (10/10 PASS), Zweisprachige SECURITY.md (48h/5d/30d SLA), Dependabot Supply-Chain, Level 1 SBOM Re-Audit & Vertragstests
 

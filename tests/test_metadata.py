@@ -415,3 +415,51 @@ def test_todo_status_table_and_zero_secrets_or_personal_paths():
                 assert not tok_re.search(line), f"Secret token pattern in {rel_str}:{lineno}"
             for path_re in personal_paths:
                 assert not path_re.search(line), f"Hardcoded personal path in {rel_str}:{lineno}"
+
+
+def test_cli_help_and_version_parity(capsys):
+    import pytest
+    from anonymizer_modul import __version__
+    from anonymizer_modul.core import main
+
+    with pytest.raises(SystemExit) as help_exit:
+        main(["--help"])
+    assert help_exit.value.code == 0
+    help_out = capsys.readouterr().out
+    assert f"v{__version__}" in help_out
+    assert "v0.2.5" not in help_out
+
+    with pytest.raises(SystemExit) as ver_exit:
+        main(["--version"])
+    assert ver_exit.value.code == 0
+    ver_out = capsys.readouterr().out
+    assert __version__ in ver_out
+
+    core_text = (REPO_ROOT / "anonymizer_modul" / "core.py").read_text(encoding="utf-8")
+    assert "nicht verfuegbar" not in core_text
+
+
+def test_pyproject_build_requires_pep639_and_pytest_strictness():
+    pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'requires = ["setuptools>=77.0.3", "wheel"]' in pyproject
+    assert "--strict-markers" in pyproject
+    assert "--strict-config" in pyproject
+    assert "--basetemp" not in pyproject
+    assert '".pytest_temp"' in pyproject
+    assert '".pytest_tmp"' in pyproject
+
+
+def test_ci_python_313_and_wheel_verification():
+    ci_text = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    assert '"3.13"' in ci_text
+    assert "anonymizer_modul/py.typed" in ci_text
+    assert "Verify wheel packaging integrity" in ci_text
+
+
+def test_generate_fake_date_never_zero_offset():
+    from anonymizer_modul.core import _generate_fake_date_same_age
+
+    for _ in range(500):
+        fake, offset = _generate_fake_date_same_age("15.03.2016")
+        assert offset != 0
+        assert fake != "15.03.2016"

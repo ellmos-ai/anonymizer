@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -110,12 +110,14 @@ anonymizer_modul = ["py.typed"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -v"
+addopts = "-ra -v --strict-markers --strict-config"
 pythonpath = ["."]
 testpaths = ["tests"]
 norecursedirs = [
     ".git",
     ".pytest_cache",
+    ".pytest_temp",
+    ".pytest_tmp",
     ".ruff_cache",
     "build",
     "dist",

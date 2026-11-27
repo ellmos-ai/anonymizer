@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml)
-[![Pytest: 92 passed](https://img.shields.io/badge/Pytest-92%20passed-brightgreen.svg)](tests/)
+[![Pytest: 96 passed](https://img.shields.io/badge/Pytest-96%20passed-brightgreen.svg)](tests/)
 [![Security: Fail--Closed](https://img.shields.io/badge/Security-Fail--Closed-red.svg)](RELEASE_GATE.md)
 [![DSGVO: Art. 4(5)](https://img.shields.io/badge/DSGVO-Art._4%285%29_Pseudonymisierung-green.svg)](#rechtlicher-rahmen-und-verantwortung)
 [![Local-First: 100% Offline](https://img.shields.io/badge/Privacy-100%25%20Local--First-blue.svg)](#funktionsumfang)
@@ -15,7 +15,7 @@
 [![LLM-Ready: llms.txt](https://img.shields.io/badge/LLM--Friendly-llms.txt-blueviolet.svg)](llms.txt)
 [![Language: Deutsch](https://img.shields.io/badge/Language-Deutsch-de.svg)](README_de.md)
 [![Ecosystem: ELLMOS / open-bricks](https://img.shields.io/badge/Ecosystem-ELLMOS%20%2F%20open--bricks-orange.svg)](https://github.com/ellmos-ai)
-[![Geprüft: 2026-11-14](https://img.shields.io/badge/Gepr%C3%BCft-2026--11--14-brightgreen.svg)](#sicherheitsvertrag)
+[![Geprüft: 2026-11-27](https://img.shields.io/badge/Gepr%C3%BCft-2026--11--27-brightgreen.svg)](#sicherheitsvertrag)
 
 > [!NOTE]
 > **KI-Agenten- & LLM-Integration:** `anonymizer` stellt eine maschinenlesbare Spezifikation [`llms.txt`](llms.txt) für autonome Agenten (Claude Code, Antigravity, Open-WebUI) bereit. Lokale Agenten können vertrauliche Klientendaten vor der Übergabe an externe Cloud-LLMs vollständig offline pseudonymisieren.
@@ -316,7 +316,7 @@ Für **Berufsgeheimnisträger** (§ 203 StGB, z. B. Ärzt:innen, Psychotherapeut
 # Syntaxprüfung
 python -m py_compile anonymizer_modul\core.py
 
-# Vollständige Testsuite ausführen (92 Vertragstests & Modultests bestanden)
+# Vollständige Testsuite ausführen (96 Vertragstests & Modultests bestanden)
 python -m pytest -v
 
 # AGPL-Schutzgrenzen-Test

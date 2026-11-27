@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](pyproject.toml)
 [![CI](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml/badge.svg)](https://github.com/ellmos-ai/anonymizer/actions/workflows/ci.yml)
-[![Pytest: 92 passed](https://img.shields.io/badge/Pytest-92%20passed-brightgreen.svg)](tests/)
+[![Pytest: 96 passed](https://img.shields.io/badge/Pytest-96%20passed-brightgreen.svg)](tests/)
 [![Security: Fail--Closed](https://img.shields.io/badge/Security-Fail--Closed-red.svg)](RELEASE_GATE.md)
 [![GDPR: Art. 4(5)](https://img.shields.io/badge/GDPR-Art._4%285%29_Pseudonymization-green.svg)](#legal-framework-and-gdpr-responsibility)
 [![Local-First: 100% Offline](https://img.shields.io/badge/Privacy-100%25%20Local--First-blue.svg)](#features)
@@ -15,7 +15,7 @@
 [![LLM-Ready: llms.txt](https://img.shields.io/badge/LLM--Friendly-llms.txt-blueviolet.svg)](llms.txt)
 [![Language: English](https://img.shields.io/badge/Language-English-blue.svg)](README.md)
 [![Ecosystem: ELLMOS / open-bricks](https://img.shields.io/badge/Ecosystem-ELLMOS%20%2F%20open--bricks-orange.svg)](https://github.com/ellmos-ai)
-[![Checked: 2026-11-14](https://img.shields.io/badge/Checked-2026--11--14-brightgreen.svg)](#security-contract)
+[![Checked: 2026-11-27](https://img.shields.io/badge/Checked-2026--11--27-brightgreen.svg)](#security-contract)
 
 > [!NOTE]
 > **AI Agent & LLM Integration Notice:** `anonymizer` provides a machine-readable specification [`llms.txt`](llms.txt) designed for autonomous AI agents (Claude Code, Antigravity, Open-WebUI). Local AI agents requiring privacy-preserving pre-cleared text inputs prior to sending prompts to external LLMs can utilize `anonymizer` completely locally and offline.
@@ -316,7 +316,7 @@ For **professionals bound by statutory confidentiality duties** (e.g. German § 
 # Bytecode verification
 python -m py_compile anonymizer_modul\core.py
 
-# Full test suite (92 contract & unit tests passed)
+# Full test suite (96 contract & unit tests passed)
 python -m pytest -v
 
 # AGPL boundary guardian test

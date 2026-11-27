@@ -151,7 +151,7 @@ try:
     SPACY_AVAILABLE = True
 except Exception as _spacy_import_error:
     SPACY_AVAILABLE = False
-    print(f"[WARN] spaCy nicht verfuegbar ({_spacy_import_error}) -- NER-Namenserkennung deaktiviert")
+    print(f"[WARN] spaCy nicht verfügbar ({_spacy_import_error}) -- NER-Namenserkennung deaktiviert")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -336,7 +336,9 @@ def _generate_fake_date_same_age(real_date: str) -> Tuple[str, int]:
     Generiert ein falsches Geburtsdatum mit demselben Alter.
     Returns: (fake_date, days_offset)
     """
-    offset = secrets.randbelow(300) - 150  # -150 bis +149 Tage
+    # Offset strikt ungleich 0 erzwingen, damit nie das echte Geburtsdatum verbleibt.
+    sign = -1 if secrets.randbelow(2) == 0 else 1
+    offset = sign * (secrets.randbelow(150) + 1)  # [-150..-1] oder [1..150] Tage
     fake = _shift_date(real_date, offset)
     return fake, offset
 
@@ -2893,7 +2895,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     import argparse
     import getpass
 
-    parser = argparse.ArgumentParser(prog="anonymizer", description="Anonymizer-Modul v0.2.5")
+    try:
+        from . import __version__ as cli_version
+    except ImportError:
+        cli_version = "0.3.1"
+
+    parser = argparse.ArgumentParser(
+        prog="anonymizer",
+        description=f"Anonymizer-Modul v{cli_version}",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {cli_version}",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("self-test", aliases=["test"], help="lokalen Selbsttest ausführen")
 
